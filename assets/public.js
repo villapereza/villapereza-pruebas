@@ -14,7 +14,10 @@
     lastVersion: null,
     pollTimer: null,
     pollBusy: false,
-    loadBusy: false
+    loadBusy: false,
+    selectionDirty: false,
+    syncBusy: false,
+    syncAgain: false
   };
 
   const els = {};
@@ -57,24 +60,27 @@
     els.loginForm.addEventListener('submit', handleLogin);
 
     document.querySelectorAll('[data-tab]').forEach(button => {
-      button.addEventListener('click', () => {
+      button.addEventListener('click', async () => {
         switchTab(button.dataset.tab);
-        queueVersionCheck(40);
+        await refreshEverything();
       });
     });
 
     document.querySelectorAll('[data-resolution-view]').forEach(button => {
-      button.addEventListener('click', () => {
+      button.addEventListener('click', async () => {
         state.resolutionView = button.dataset.resolutionView;
         document.querySelectorAll('[data-resolution-view]').forEach(item => {
           item.classList.toggle('active', item.dataset.resolutionView === state.resolutionView);
         });
         renderResolution();
-        queueVersionCheck(40);
+        await refreshEverything();
       });
     });
 
-    els.profileButton.addEventListener('click', () => switchTab('mine'));
+    els.profileButton.addEventListener('click', async () => {
+      switchTab('mine');
+      await refreshEverything();
+    });
     els.logoutButton.addEventListener('click', logout);
     els.changePasswordButton.addEventListener('click', () => {
       els.passwordForm.reset();
@@ -91,7 +97,7 @@
 
     window.addEventListener('online', handleOnline);
     document.addEventListener('visibilitychange', () => {
-      if (!document.hidden && state.session) checkVersionNow();
+      if (!document.hidden && state.session) refreshEverything();
     });
 
     document.addEventListener('click', event => {
@@ -254,6 +260,7 @@
     const id = String(event.currentTarget.dataset.testId);
     if (event.currentTarget.checked) state.selectedIds.add(id);
     else state.selectedIds.delete(id);
+    state.selectionDirty = true;
 
     updateSelectedCount();
     persistSelection();
@@ -270,23 +277,71 @@
     const ids = Array.from(state.selectedIds);
     VP.saveLocalSelection(ids);
     window.clearTimeout(state.savingTimer);
+    state.savingTimer = window.setTimeout(() => syncSelectionAndReload(), 80);
+  }
 
-    state.savingTimer = window.setTimeout(async () => {
-      try {
+  async function refreshEverything() {
+    if (!state.session || (state.session.user && state.session.user.mustChangePin)) return;
+    window.clearTimeout(state.savingTimer);
+
+    if (state.selectionDirty || state.syncBusy) {
+      await syncSelectionAndReload({ alwaysReload: true });
+      return;
+    }
+
+    await forceLoadData();
+  }
+
+  async function syncSelectionAndReload(options = {}) {
+    if (!state.session || (state.session.user && state.session.user.mustChangePin)) return;
+    window.clearTimeout(state.savingTimer);
+
+    if (state.syncBusy) {
+      state.syncAgain = true;
+      return;
+    }
+
+    state.syncBusy = true;
+    const shouldPersist = state.selectionDirty;
+    const ids = Array.from(state.selectedIds);
+
+    try {
+      if (shouldPersist) {
         await VP.queueMyRequests(ids);
-        if (state.session && navigator.onLine) {
-          await VP.flushMyRequests(state.session.token);
-          await loadData({ flushFirst: false, quiet: true });
-        }
-      } catch (error) {
-        if (error.code === 'UNAUTHORIZED') endSession();
-        if (error.code === 'PIN_CHANGE_REQUIRED') markPinChangeRequired();
-        if (['REQUESTS_CLOSED', 'TEST_CLOSED'].includes(error.code)) {
-          VP.showToast(els.toast, error.message);
-          await loadData({ flushFirst: false });
-        }
+        state.selectionDirty = false;
       }
-    }, 120);
+
+      if (navigator.onLine) {
+        await VP.flushMyRequests(state.session.token);
+      }
+
+      if (options.alwaysReload !== false) {
+        await forceLoadData();
+      }
+    } catch (error) {
+      if (shouldPersist) state.selectionDirty = true;
+      if (error.code === 'UNAUTHORIZED') endSession();
+      if (error.code === 'PIN_CHANGE_REQUIRED') markPinChangeRequired();
+      if (['REQUESTS_CLOSED', 'TEST_CLOSED'].includes(error.code)) {
+        VP.showToast(els.toast, error.message);
+        await forceLoadData();
+      }
+    } finally {
+      state.syncBusy = false;
+      if (state.syncAgain || state.selectionDirty) {
+        state.syncAgain = false;
+        window.setTimeout(() => syncSelectionAndReload({ alwaysReload: true }), 0);
+      }
+    }
+  }
+
+  async function forceLoadData() {
+    let attempts = 0;
+    while (state.loadBusy && attempts < 200) {
+      await new Promise(resolve => window.setTimeout(resolve, 25));
+      attempts += 1;
+    }
+    await loadData({ flushFirst: false, quiet: true });
   }
 
   function renderRequests() {
@@ -545,6 +600,9 @@
     state.data = null;
     state.lastVersion = null;
     state.selectedIds.clear();
+    state.selectionDirty = false;
+    state.syncBusy = false;
+    state.syncAgain = false;
     stopPolling();
     showLogin();
   }
@@ -553,8 +611,8 @@
     if (!state.session) return;
     try {
       const result = await VP.flushMyRequests(state.session.token);
-      if (result.flushed && !result.empty) await loadData({ flushFirst: false });
-      else await checkVersionNow();
+      if (result.flushed && !result.empty) await forceLoadData();
+      else await refreshEverything();
     } catch (error) {
       if (error.code === 'UNAUTHORIZED') endSession();
       if (error.code === 'PIN_CHANGE_REQUIRED') markPinChangeRequired();

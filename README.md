@@ -30,3 +30,9 @@ Corrección de caché para evitar mezclar versiones del panel y asegurar que el 
 ## Versión 6.1
 - El PIN puede tener cualquier longitud desde 1 cifra.
 - Se mantienen únicamente caracteres numéricos.
+
+
+## v6.2
+- Recarga completa al cambiar de pestaña.
+- Guarda las solicitudes pendientes antes de mostrar otra sección.
+- Recarga completa al volver a la aplicación.

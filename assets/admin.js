@@ -70,9 +70,9 @@
     els.adminLogoutButton.addEventListener('click', logout);
 
     document.querySelectorAll('[data-admin-tab]').forEach(button => {
-      button.addEventListener('click', () => {
+      button.addEventListener('click', async () => {
         switchTab(button.dataset.adminTab);
-        queueVersionCheck(40);
+        await forceLoadAdminData();
       });
     });
 
@@ -94,7 +94,7 @@
 
     window.addEventListener('online', () => { if (state.session) checkVersionNow(); });
     document.addEventListener('visibilitychange', () => {
-      if (!document.hidden && state.session) checkVersionNow();
+      if (!document.hidden && state.session) forceLoadAdminData();
     });
     document.addEventListener('click', event => {
       if (event.target.closest('button, a, [role="button"]')) queueVersionCheck(80);
@@ -995,6 +995,16 @@
   function stopPolling() {
     if (state.pollTimer) window.clearInterval(state.pollTimer);
     state.pollTimer = null;
+  }
+
+  async function forceLoadAdminData() {
+    if (!state.session || (state.session.user && state.session.user.mustChangePin)) return;
+    let attempts = 0;
+    while (state.loadBusy && attempts < 200) {
+      await new Promise(resolve => window.setTimeout(resolve, 25));
+      attempts += 1;
+    }
+    await loadAdminData({ quiet: true });
   }
 
   function queueVersionCheck(delay = 0) {
