@@ -55,7 +55,7 @@
       'userDialogTitle', 'userId', 'userName', 'userUsername', 'userPasswordLabel', 'userPassword', 'userRole',
       'userActiveRow', 'userActive', 'userFormError', 'resetPasswordDialog', 'resetPasswordForm', 'resetUserId',
       'resetPasswordUser', 'resetPasswordValue', 'resetPasswordError', 'testDialog', 'testForm', 'testDialogTitle',
-      'testId', 'testName', 'testPlaces', 'testOrder', 'testDay', 'testDescription', 'testActive',
+      'testId', 'testName', 'testPlaces', 'testOrder', 'testDay', 'testDescription', 'testIncompatibilities', 'testActive',
       'testRequestsOpen', 'testResolutionPublished', 'testFormError', 'assignmentDialog', 'assignmentForm',
       'assignmentDialogTitle', 'assignmentTestId', 'assignmentPlaces', 'assignmentSelectedCount', 'assignmentPeople',
       'assignmentFormError', 'adminInitialPinDialog', 'adminInitialPinForm', 'adminInitialPin',
@@ -365,17 +365,29 @@
   }
 
   function renderTests() {
-    els.testsTableBody.innerHTML = state.data.tests.map(test => `
+    const testsById = indexBy(state.data.tests, 'id');
+    els.testsTableBody.innerHTML = state.data.tests.map(test => {
+      const incompatibleNames = (test.incompatibleTestIds || [])
+        .map(id => testsById[id])
+        .filter(Boolean)
+        .map(item => item.name)
+        .sort((a, b) => a.localeCompare(b, 'es'));
+
+      return `
       <tr class="${test.active ? '' : 'row-inactive'}">
         <td>${test.order}</td>
         <td><strong>${VP.escapeHtml(test.name)}</strong>${test.description ? `<small>${VP.escapeHtml(test.description)}</small>` : ''}</td>
         <td><span class="day-badge">${VP.escapeHtml(dayLabel(test.day))}</span></td>
         <td>${test.places || '—'}</td>
+        <td>${incompatibleNames.length
+          ? `<span class="incompatibility-count">${incompatibleNames.length}</span><small>${VP.escapeHtml(incompatibleNames.join(', '))}</small>`
+          : '<small>Ninguna</small>'}</td>
         <td><span class="state-dot ${test.requestsOpen ? 'active' : 'inactive'}">${test.requestsOpen ? 'Abiertas' : 'Cerradas'}</span></td>
         <td><span class="state-dot ${test.resolutionPublished ? 'active' : 'inactive'}">${test.resolutionPublished ? 'Publicada' : 'Oculta'}</span></td>
         <td><span class="state-dot ${test.active ? 'active' : 'inactive'}">${test.active ? 'Activa' : 'Inactiva'}</span></td>
         <td class="actions-cell"><button class="table-action" type="button" data-edit-test="${VP.escapeHtml(test.id)}">Editar</button></td>
-      </tr>`).join('');
+      </tr>`;
+    }).join('');
 
     els.testsTableBody.querySelectorAll('[data-edit-test]').forEach(button => {
       button.addEventListener('click', () => openEditTest(button.dataset.editTest));
@@ -393,6 +405,7 @@
     els.testActive.checked = true;
     els.testRequestsOpen.checked = true;
     els.testResolutionPublished.checked = false;
+    renderTestIncompatibilities('', []);
     els.testDialog.showModal();
   }
 
@@ -412,6 +425,7 @@
     els.testActive.checked = test.active;
     els.testRequestsOpen.checked = test.requestsOpen;
     els.testResolutionPublished.checked = test.resolutionPublished;
+    renderTestIncompatibilities(test.id, test.incompatibleTestIds || []);
     els.testDialog.showModal();
   }
 
@@ -433,7 +447,8 @@
         description: els.testDescription.value,
         places: Number(els.testPlaces.value),
         day: els.testDay.value,
-        requestsOpen: els.testRequestsOpen.checked
+        requestsOpen: els.testRequestsOpen.checked,
+        incompatibleTestIds: selectedIncompatibleTestIds()
       };
 
       if (id) {
@@ -456,6 +471,27 @@
     } finally {
       VP.setButtonBusy(button, false);
     }
+  }
+
+  function renderTestIncompatibilities(currentTestId, selectedIds) {
+    const selected = new Set((selectedIds || []).map(String));
+    const available = state.data.tests
+      .filter(test => test.id !== currentTestId)
+      .sort((a, b) => a.order - b.order || sortByName(a, b));
+
+    els.testIncompatibilities.innerHTML = available.length
+      ? available.map(test => `
+          <label class="incompatibility-option">
+            <input type="checkbox" value="${VP.escapeHtml(test.id)}" ${selected.has(test.id) ? 'checked' : ''}>
+            <span class="incompatibility-option-check">✓</span>
+            <span>${VP.escapeHtml(test.name)}</span>
+            <small>${VP.escapeHtml(dayLabel(test.day))}</small>
+          </label>`).join('')
+      : '<p class="empty-admin">No hay otras pruebas creadas.</p>';
+  }
+
+  function selectedIncompatibleTestIds() {
+    return Array.from(els.testIncompatibilities.querySelectorAll('input:checked')).map(input => input.value);
   }
 
   function renderRequests() {
@@ -547,47 +583,105 @@
     const notRequested = users.filter(user => !requestedIds.has(user.id));
 
     els.assignmentPeople.innerHTML = `
-      ${peopleSelectorGroup('La han solicitado', requested, requestedIds, assignedIds, counts)}
-      ${peopleSelectorGroup('No la han solicitado', notRequested, requestedIds, assignedIds, counts)}
+      ${peopleSelectorGroup('La han solicitado', requested, requestedIds, assignedIds, counts, test)}
+      ${peopleSelectorGroup('No la han solicitado', notRequested, requestedIds, assignedIds, counts, test)}
     `;
 
     els.assignmentPeople.querySelectorAll('input').forEach(input => {
-      input.addEventListener('change', () => handleAssignmentCount(test));
+      input.addEventListener('change', () => handleAssignmentCount(test, input));
     });
     handleAssignmentCount(test);
     els.assignmentDialog.showModal();
   }
 
-  function peopleSelectorGroup(title, users, requestedIds, assignedIds, counts) {
+  function peopleSelectorGroup(title, users, requestedIds, assignedIds, counts, test) {
     if (!users.length) return '';
     return `
       <section class="people-selector-group">
         <h3>${VP.escapeHtml(title)}</h3>
-        ${users.map(user => `
-          <label class="person-option ${requestedIds.has(user.id) ? 'requested' : 'not-requested'}">
+        ${users.map(user => {
+          const conflicts = incompatibleAssignmentsForUser(user.id, test.id);
+          return `
+          <label class="person-option ${requestedIds.has(user.id) ? 'requested' : 'not-requested'} ${conflicts.length ? 'has-conflict' : ''}">
             <input type="checkbox" value="${VP.escapeHtml(user.id)}" ${assignedIds.has(user.id) ? 'checked' : ''}>
             <span class="person-option-avatar">${VP.escapeHtml(VP.initials(user.name))}</span>
             <span class="person-option-copy">
               <strong>${VP.escapeHtml(user.name)}</strong>
               <small>${requestedIds.has(user.id) ? 'Ha solicitado esta prueba' : 'Asignación directa'} · ${counts[user.id] || 0} pruebas actuales</small>
+              ${conflicts.length ? `<em>Incompatible con ${VP.escapeHtml(conflicts.map(item => item.name).join(', '))}</em>` : ''}
             </span>
             <span class="person-option-check">✓</span>
-          </label>`).join('')}
+          </label>`;
+        }).join('')}
       </section>`;
   }
 
-  function handleAssignmentCount(test) {
-    const checked = Array.from(els.assignmentPeople.querySelectorAll('input:checked'));
+  function incompatibleAssignmentsForUser(userId, targetTestId) {
+    const target = state.data.tests.find(test => test.id === targetTestId);
+    if (!target) return [];
+    const incompatibleIds = new Set((target.incompatibleTestIds || []).map(String));
+    if (!incompatibleIds.size) return [];
 
-    if (test.places > 0 && checked.length > test.places) {
-      const last = checked[checked.length - 1];
-      last.checked = false;
-      showError(els.assignmentFormError, `Esta prueba tiene ${test.places} plazas.`);
-    } else {
-      hideError(els.assignmentFormError);
+    const assignedTestIds = state.data.assignments
+      .filter(item => item.userId === userId && item.testId !== targetTestId)
+      .map(item => item.testId);
+
+    return assignedTestIds
+      .filter(id => incompatibleIds.has(id))
+      .map(id => state.data.tests.find(test => test.id === id))
+      .filter(Boolean);
+  }
+
+  function assignmentIncompatibilityConflicts(testId, selectedUserIds) {
+    const usersById = indexBy(state.data.users, 'id');
+    return selectedUserIds.flatMap(userId => incompatibleAssignmentsForUser(userId, testId).map(otherTest => ({
+      user: usersById[userId],
+      otherTest
+    }))).filter(item => item.user);
+  }
+
+  function formatAssignmentConflict(test, conflicts) {
+    const details = conflicts
+      .slice(0, 8)
+      .map(item => `${item.user.name} ya está asignada a ${item.otherTest.name}`)
+      .join('; ');
+    return `No se puede asignar a ${test.name}: ${details}.`;
+  }
+
+  function handleAssignmentCount(test, changedInput) {
+    let immediateConflict = false;
+    if (changedInput && changedInput.checked) {
+      const user = state.data.users.find(item => item.id === changedInput.value);
+      const conflicts = incompatibleAssignmentsForUser(changedInput.value, test.id);
+      if (conflicts.length) {
+        changedInput.checked = false;
+        immediateConflict = true;
+        showError(
+          els.assignmentFormError,
+          `${user ? user.name : 'Esta persona'} no puede participar en ${test.name} porque ya está asignada a ${conflicts.map(item => item.name).join(', ')}.`
+        );
+      }
     }
 
-    const count = els.assignmentPeople.querySelectorAll('input:checked').length;
+    let checked = Array.from(els.assignmentPeople.querySelectorAll('input:checked'));
+    if (test.places > 0 && checked.length > test.places) {
+      const last = changedInput && changedInput.checked ? changedInput : checked[checked.length - 1];
+      if (last) last.checked = false;
+      showError(els.assignmentFormError, `Esta prueba tiene ${test.places} plazas.`);
+      checked = Array.from(els.assignmentPeople.querySelectorAll('input:checked'));
+    }
+
+    const conflicts = assignmentIncompatibilityConflicts(test.id, checked.map(input => input.value));
+    const saveButton = els.assignmentForm.querySelector('[type="submit"]');
+    if (conflicts.length) {
+      showError(els.assignmentFormError, formatAssignmentConflict(test, conflicts));
+      saveButton.disabled = true;
+    } else {
+      if (!immediateConflict) hideError(els.assignmentFormError);
+      saveButton.disabled = false;
+    }
+
+    const count = checked.length;
     const status = capacityStatus(count, test.places);
     els.assignmentSelectedCount.textContent = `${count} seleccionadas · ${status.label}`;
   }
@@ -601,6 +695,11 @@
     try {
       const testId = els.assignmentTestId.value;
       const userIds = Array.from(els.assignmentPeople.querySelectorAll('input:checked')).map(input => input.value);
+      const test = state.data.tests.find(item => item.id === testId);
+      const incompatibilityConflicts = assignmentIncompatibilityConflicts(testId, userIds);
+      if (incompatibilityConflicts.length) {
+        throw new VP.VPError('INCOMPATIBLE_ASSIGNMENT', formatAssignmentConflict(test, incompatibilityConflicts));
+      }
       const projected = projectedAssignmentIssues(testId, userIds);
       const overLimit = projected.filter(issue => issue.count > 4);
 
@@ -911,6 +1010,8 @@
       TEST_EXISTS: 'Ya existe una prueba activa con ese nombre.',
       ADMIN_SELF_LOCK: error.message,
       TOO_MANY_ASSIGNMENTS: error.message,
+      INCOMPATIBLE_ASSIGNMENT: error.message,
+      INVALID_INCOMPATIBILITY: error.message,
       PIN_CHANGE_REQUIRED: 'Debes cambiar el PIN temporal antes de continuar.',
       VALIDATION_ERROR: error.message
     };

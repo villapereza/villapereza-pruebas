@@ -91,7 +91,7 @@
 
       <section class="admin-panel" data-admin-panel="tests" hidden>
         <div class="panel-toolbar"><div><span class="section-label">PROGRAMA</span><h2>Pruebas</h2></div><button id="newTestButton" class="admin-primary" type="button">Crear prueba</button></div>
-        <div class="admin-card table-card"><div class="table-scroll"><table><thead><tr><th>Orden</th><th>Prueba</th><th>Día</th><th>Plazas</th><th>Solicitudes</th><th>Resolución</th><th>Estado</th><th></th></tr></thead><tbody id="testsTableBody"></tbody></table></div></div>
+        <div class="admin-card table-card"><div class="table-scroll"><table><thead><tr><th>Orden</th><th>Prueba</th><th>Día</th><th>Plazas</th><th>Incompatibilidades</th><th>Solicitudes</th><th>Resolución</th><th>Estado</th><th></th></tr></thead><tbody id="testsTableBody"></tbody></table></div></div>
       </section>
 
       <section class="admin-panel" data-admin-panel="requests" hidden>
@@ -160,6 +160,12 @@
         <label><span>Día</span><select id="testDay"><option value="">Sin asignar</option><option value="Jueves 21">Jueves 21</option><option value="Viernes 22">Viernes 22</option><option value="Sábado 23">Sábado 23</option></select></label>
       </div>
       <label><span>Descripción</span><textarea id="testDescription" rows="3" maxlength="500"></textarea></label>
+      <section class="incompatibility-field">
+        <div class="field-heading">
+          <div><span>Incompatibilidades</span><small>Una misma persona no podrá estar asignada a esta prueba y a cualquiera de las marcadas.</small></div>
+        </div>
+        <div id="testIncompatibilities" class="incompatibility-selector"></div>
+      </section>
       <div class="check-grid">
         <label class="check-row"><input id="testActive" type="checkbox" checked> Prueba activa</label>
         <label class="check-row"><input id="testRequestsOpen" type="checkbox" checked> Admite solicitudes</label>

@@ -338,3 +338,94 @@ code { padding: 3px 6px; border-radius: 5px; color: #45516a; background: #eef2f7
   .distribution-card { grid-column: auto; }
   .distribution-row { align-items: flex-start; }
 }
+
+/* Actualización v5: incompatibilidades entre pruebas */
+.incompatibility-field {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: #f8fafc;
+}
+.field-heading > div { display: grid; gap: 4px; }
+.field-heading span { color: #344057; font-size: 12px; font-weight: 750; }
+.field-heading small { color: var(--muted); font-size: 10px; line-height: 1.45; }
+.incompatibility-selector {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  max-height: 230px;
+  overflow-y: auto;
+}
+.incompatibility-option {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #fff;
+  cursor: pointer;
+}
+.incompatibility-option input { position: absolute; opacity: 0; pointer-events: none; }
+.incompatibility-option-check {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 1px solid #cfd7e3;
+  border-radius: 6px;
+  color: transparent;
+  background: #fff;
+  font-size: 11px;
+  font-weight: 900;
+}
+.incompatibility-option > span:nth-of-type(2) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 700;
+}
+.incompatibility-option small { color: var(--muted); font-size: 8px; white-space: nowrap; }
+.incompatibility-option:has(input:checked) {
+  border-color: #d49ca7;
+  background: #fff6f8;
+  box-shadow: 0 0 0 2px rgba(155,29,48,.05);
+}
+.incompatibility-option input:checked ~ .incompatibility-option-check {
+  color: #fff;
+  border-color: #9b1d30;
+  background: #9b1d30;
+}
+.incompatibility-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 23px;
+  height: 23px;
+  margin-right: 6px;
+  padding: 0 6px;
+  border-radius: 999px;
+  color: #8c1d31;
+  background: #ffe3e8;
+  font-size: 10px;
+  font-weight: 850;
+}
+.person-option.has-conflict {
+  border-color: #e4a8b3;
+  background: #fff7f8;
+}
+.person-option-copy em {
+  color: #9b1d30;
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+@media (max-width: 700px) {
+  .incompatibility-selector { grid-template-columns: 1fr; }
+}

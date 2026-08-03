@@ -9,3 +9,9 @@ Aplicación web móvil para gestionar las solicitudes y asignaciones de las prue
 - GitHub Pages: alojamiento de la interfaz.
 
 La dirección de la API ya está configurada en `config.js`.
+
+
+## Versión 2.1.0
+
+- Incompatibilidades configurables entre pruebas.
+- Bloqueo inmediato y validación de servidor ante asignaciones incompatibles.
