@@ -7,10 +7,10 @@
   <meta name="description" content="Panel de administración de Villa Pereza.">
   <title>Administración · Villa Pereza</title>
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="assets/admin.css?v=6.0.0">
-  <script defer src="config.js?v=6.0.0"></script>
-  <script defer src="assets/shared.js?v=6.0.0"></script>
-  <script defer src="assets/admin.js?v=6.0.0"></script>
+  <link rel="stylesheet" href="assets/admin.css?v=6.1.0">
+  <script defer src="config.js?v=6.1.0"></script>
+  <script defer src="assets/shared.js?v=6.1.0"></script>
+  <script defer src="assets/admin.js?v=6.1.0"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
@@ -35,7 +35,7 @@
         <label>
           <span>PIN</span>
           <div class="password-field">
-            <input id="adminPassword" type="password" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" autocomplete="current-password" placeholder="PIN de 4 cifras" required>
+            <input id="adminPassword" type="password" inputmode="numeric" pattern="[0-9]+" minlength="1" autocomplete="current-password" placeholder="PIN numérico" required>
             <button class="password-toggle" type="button" data-toggle-password="adminPassword">Ver</button>
           </div>
         </label>
@@ -138,7 +138,7 @@
       <div class="form-grid">
         <label><span>Nombre visible</span><input id="userName" type="text" required></label>
         <label><span>Nombre de usuario</span><input id="userUsername" type="text" autocapitalize="none" required></label>
-        <label id="userPasswordLabel"><span>PIN inicial</span><input id="userPassword" type="text" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4"></label>
+        <label id="userPasswordLabel"><span>PIN inicial</span><input id="userPassword" type="text" inputmode="numeric" pattern="[0-9]+" minlength="1"></label>
         <label><span>Rol</span><select id="userRole"><option value="participante">Participante</option><option value="admin">Administrador</option></select></label>
       </div>
       <label id="userActiveRow" class="check-row"><input id="userActive" type="checkbox" checked> Usuario activo</label>
@@ -152,7 +152,7 @@
       <div class="dialog-heading"><div><span class="section-label">SEGURIDAD</span><h2>Restablecer PIN</h2></div><button class="dialog-close" type="button" data-close-dialog="resetPasswordDialog">×</button></div>
       <input id="resetUserId" type="hidden">
       <p id="resetPasswordUser"></p>
-      <label><span>PIN temporal nuevo</span><input id="resetPasswordValue" type="text" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" required></label>
+      <label><span>PIN temporal nuevo</span><input id="resetPasswordValue" type="text" inputmode="numeric" pattern="[0-9]+" minlength="1" required></label>
       <p id="resetPasswordError" class="form-error" hidden></p>
       <div class="dialog-actions"><button class="admin-secondary" type="button" data-close-dialog="resetPasswordDialog">Cancelar</button><button class="admin-primary" type="submit">Cambiar</button></div>
     </form>
@@ -214,9 +214,9 @@
   <dialog id="adminInitialPinDialog" class="admin-dialog narrow mandatory-dialog">
     <form id="adminInitialPinForm" method="dialog">
       <div class="dialog-heading"><div><span class="section-label">PRIMER ACCESO</span><h2>Elige tu PIN</h2></div></div>
-      <p>Debes cambiar el código temporal por un PIN personal de 4 cifras antes de continuar.</p>
-      <label><span>Nuevo PIN</span><input id="adminInitialPin" type="password" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" required></label>
-      <label><span>Repetir PIN</span><input id="adminInitialPinRepeat" type="password" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" required></label>
+      <p>Debes cambiar el código temporal por un PIN numérico personal antes de continuar.</p>
+      <label><span>Nuevo PIN</span><input id="adminInitialPin" type="password" inputmode="numeric" pattern="[0-9]+" minlength="1" required></label>
+      <label><span>Repetir PIN</span><input id="adminInitialPinRepeat" type="password" inputmode="numeric" pattern="[0-9]+" minlength="1" required></label>
       <p id="adminInitialPinError" class="form-error" hidden></p>
       <div class="dialog-actions"><button id="adminInitialPinButton" class="admin-primary" type="submit">Guardar PIN</button></div>
     </form>

@@ -105,7 +105,7 @@
     event.preventDefault();
     hideError(els.adminLoginError);
     if (!isValidPin(els.adminPassword.value)) {
-      showError(els.adminLoginError, 'El PIN debe tener exactamente 4 cifras.');
+      showError(els.adminLoginError, 'El PIN debe contener al menos una cifra y solo puede incluir números.');
       return;
     }
     VP.setButtonBusy(els.adminLoginButton, true, 'Accediendo…');
@@ -340,7 +340,7 @@
         }, { token: state.session.token });
       } else {
         if (!isValidPin(els.userPassword.value)) {
-          throw new VP.VPError('VALIDATION_ERROR', 'El PIN inicial debe tener exactamente 4 cifras.');
+          throw new VP.VPError('VALIDATION_ERROR', 'El PIN inicial debe contener al menos una cifra y solo puede incluir números.');
         }
         await VP.api('adminCreateUser', {
           name: els.userName.value,
@@ -380,7 +380,7 @@
 
     try {
       if (!isValidPin(els.resetPasswordValue.value)) {
-        throw new VP.VPError('VALIDATION_ERROR', 'El PIN debe tener exactamente 4 cifras.');
+        throw new VP.VPError('VALIDATION_ERROR', 'El PIN debe contener al menos una cifra y solo puede incluir números.');
       }
 
       await VP.api('adminResetPin', {
@@ -960,7 +960,7 @@
     hideError(els.adminInitialPinError);
 
     if (!isValidPin(els.adminInitialPin.value)) {
-      showError(els.adminInitialPinError, 'El PIN debe tener exactamente 4 cifras.');
+      showError(els.adminInitialPinError, 'El PIN debe contener al menos una cifra y solo puede incluir números.');
       return;
     }
     if (els.adminInitialPin.value !== els.adminInitialPinRepeat.value) {
@@ -1123,7 +1123,7 @@
 
   function bindPinInput(input) {
     input.addEventListener('input', () => {
-      const clean = String(input.value || '').replace(/\D/g, '').slice(0, 4);
+      const clean = String(input.value || '').replace(/\D/g, '');
       if (input.value !== clean) input.value = clean;
     });
   }
@@ -1200,7 +1200,7 @@
   }
 
   function isValidPin(value) {
-    return /^\d{4}$/.test(String(value || ''));
+    return /^\d+$/.test(String(value || ''));
   }
 
   function showError(element, message) {

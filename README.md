@@ -24,4 +24,9 @@ Corrección de caché para evitar mezclar versiones del panel y asegurar que el 
 ## Versión 6.0
 - Control de usuarios con sus pruebas asignadas.
 - Edición del reparto completo por persona.
-- PIN obligatorio de exactamente 4 cifras.
+- PIN exclusivamente numérico, con cualquier longitud a partir de 1 cifra.
+
+
+## Versión 6.1
+- El PIN puede tener cualquier longitud desde 1 cifra.
+- Se mantienen únicamente caracteres numéricos.

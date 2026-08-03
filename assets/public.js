@@ -103,7 +103,7 @@
     event.preventDefault();
     hideError(els.loginError);
     if (!isValidPin(els.loginPassword.value)) {
-      showError(els.loginError, 'El PIN debe tener exactamente 4 cifras.');
+      showError(els.loginError, 'El PIN debe contener al menos una cifra y solo puede incluir números.');
       return;
     }
     VP.setButtonBusy(els.loginButton, true, 'Entrando…');
@@ -438,7 +438,7 @@
     hideError(els.initialPinError);
 
     if (!isValidPin(els.initialPin.value)) {
-      showError(els.initialPinError, 'El PIN debe tener exactamente 4 cifras.');
+      showError(els.initialPinError, 'El PIN debe contener al menos una cifra y solo puede incluir números.');
       return;
     }
     if (els.initialPin.value !== els.initialPinRepeat.value) {
@@ -470,7 +470,7 @@
     hideError(els.passwordError);
 
     if (!isValidPin(els.currentPassword.value) || !isValidPin(els.newPassword.value)) {
-      showError(els.passwordError, 'Los PIN deben tener exactamente 4 cifras.');
+      showError(els.passwordError, 'Los PIN deben contener al menos una cifra y solo pueden incluir números.');
       return;
     }
     if (els.newPassword.value !== els.repeatPassword.value) {
@@ -616,7 +616,7 @@
   }
 
   function isValidPin(value) {
-    return /^\d{4}$/.test(String(value || ''));
+    return /^\d+$/.test(String(value || ''));
   }
 
   function showLogin() {
@@ -633,7 +633,7 @@
 
   function bindPinInput(input) {
     input.addEventListener('input', () => {
-      const clean = String(input.value || '').replace(/\D/g, '').slice(0, 4);
+      const clean = String(input.value || '').replace(/\D/g, '');
       if (input.value !== clean) input.value = clean;
     });
   }
