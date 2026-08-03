@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vp-pruebas-disabled-v8.0.0';
+const CACHE_NAME = 'vp-pruebas-disabled-v8.0.1';
 self.addEventListener('install', event => event.waitUntil(self.skipWaiting()));
 self.addEventListener('activate', event => {
   event.waitUntil(
