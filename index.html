@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#c62070">
+  <meta name="description" content="Aplicación del equipo Villa Pereza para gestionar las pruebas de las Olimpiadas.">
+  <title>Villa Pereza · Pruebas</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.svg">
+  <link rel="stylesheet" href="assets/public.css">
+  <script defer src="config.js"></script>
+  <script defer src="assets/shared.js"></script>
+  <script defer src="assets/public.js"></script>
+</head>
+<body>
+  <noscript>Necesitas activar JavaScript para utilizar esta aplicación.</noscript>
+
+  <section id="loginView" class="login-screen">
+    <div class="login-decoration login-decoration-one"></div>
+    <div class="login-decoration login-decoration-two"></div>
+    <main class="login-card">
+      <div class="brand-lockup" aria-label="Villa Pereza">
+        <span class="brand-villa">VILLA</span>
+        <span class="brand-pereza">PEREZA</span>
+      </div>
+      <p class="login-kicker">OLIMPIADAS 2026</p>
+      <h1>Gestión de pruebas</h1>
+      <p class="login-copy">Entra con el usuario y la contraseña que te ha dado el equipo.</p>
+
+      <form id="loginForm" class="login-form" autocomplete="on">
+        <label>
+          <span>Usuario</span>
+          <input id="loginUsername" name="username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" required>
+        </label>
+        <label>
+          <span>Contraseña</span>
+          <div class="password-field">
+            <input id="loginPassword" name="password" type="password" autocomplete="current-password" required>
+            <button class="password-toggle" type="button" data-toggle-password="loginPassword" aria-label="Mostrar contraseña">Ver</button>
+          </div>
+        </label>
+        <p id="loginError" class="form-error" role="alert" hidden></p>
+        <button id="loginButton" class="primary-button" type="submit">Entrar</button>
+      </form>
+      <a class="admin-link" href="admin.html">Acceso de administración</a>
+    </main>
+  </section>
+
+  <div id="appView" class="app-shell" hidden>
+    <header class="app-header">
+      <div class="mini-brand" aria-hidden="true"><span>VP</span></div>
+      <div class="header-copy">
+        <p>VILLA PEREZA</p>
+        <h1 id="publicTitle">Gestión de pruebas</h1>
+      </div>
+      <button id="profileButton" class="profile-button" type="button" aria-label="Abrir perfil">
+        <span id="profileInitial">V</span>
+      </button>
+    </header>
+
+    <main class="content-area">
+      <section id="tabTests" class="tab-panel active" data-panel="tests">
+        <div class="hero-card">
+          <p class="eyebrow">TU ELECCIÓN</p>
+          <h2>¿En qué pruebas quieres participar?</h2>
+          <p>Marca todas las que te apetezca hacer. Puedes cambiar tu elección mientras estén abiertas.</p>
+          <div class="selection-counter"><strong id="selectedCount">0</strong> seleccionadas</div>
+        </div>
+        <div id="requestsClosedBanner" class="notice-card" hidden>El plazo de solicitudes está cerrado.</div>
+        <div id="testsList" class="card-list" aria-live="polite"></div>
+        <div id="testsEmpty" class="empty-state" hidden>No hay pruebas disponibles.</div>
+      </section>
+
+      <section id="tabRequests" class="tab-panel" data-panel="requests" hidden>
+        <div class="section-heading">
+          <p class="eyebrow">PETICIONES DEL EQUIPO</p>
+          <h2>Quién quiere hacer cada prueba</h2>
+        </div>
+        <div id="requestersList" class="card-list"></div>
+        <div id="requestsHidden" class="empty-state" hidden>Las solicitudes no están visibles en este momento.</div>
+      </section>
+
+      <section id="tabResolution" class="tab-panel" data-panel="resolution" hidden>
+        <div class="section-heading resolution-heading">
+          <p class="eyebrow">REPARTO DEFINITIVO</p>
+          <h2>Resolución de las pruebas</h2>
+        </div>
+        <div id="resolutionList" class="card-list"></div>
+        <div id="resolutionHidden" class="empty-state" hidden>La resolución todavía no se ha publicado.</div>
+      </section>
+
+      <section id="tabMine" class="tab-panel" data-panel="mine" hidden>
+        <div class="profile-hero">
+          <div id="mineAvatar" class="large-avatar">V</div>
+          <div>
+            <p class="eyebrow">MI FICHA</p>
+            <h2 id="mineName">Integrante</h2>
+            <p id="mineUsername">@usuario</p>
+          </div>
+        </div>
+        <article class="mine-block">
+          <h3>Pruebas solicitadas</h3>
+          <div id="mineRequested" class="tag-list"></div>
+        </article>
+        <article class="mine-block">
+          <h3>Pruebas asignadas</h3>
+          <div id="mineAssigned" class="tag-list"></div>
+        </article>
+        <div class="profile-actions">
+          <button id="changePasswordButton" class="secondary-button" type="button">Cambiar contraseña</button>
+          <button id="logoutButton" class="text-button danger-text" type="button">Cerrar sesión</button>
+        </div>
+      </section>
+    </main>
+
+    <nav class="bottom-nav" aria-label="Navegación principal">
+      <button class="nav-item active" type="button" data-tab="tests"><span class="nav-icon">✓</span><span>Pruebas</span></button>
+      <button class="nav-item" type="button" data-tab="requests"><span class="nav-icon">◎</span><span>Solicitudes</span></button>
+      <button class="nav-item" type="button" data-tab="resolution"><span class="nav-icon">★</span><span>Resolución</span></button>
+      <button class="nav-item" type="button" data-tab="mine"><span class="nav-icon">●</span><span>Mi ficha</span></button>
+    </nav>
+  </div>
+
+  <dialog id="passwordDialog" class="modal-card">
+    <form id="passwordForm" method="dialog">
+      <div class="modal-heading">
+        <div>
+          <p class="eyebrow">SEGURIDAD</p>
+          <h2>Cambiar contraseña</h2>
+        </div>
+        <button class="icon-button" type="button" data-close-dialog="passwordDialog" aria-label="Cerrar">×</button>
+      </div>
+      <label><span>Contraseña actual</span><input id="currentPassword" type="password" autocomplete="current-password" required></label>
+      <label><span>Nueva contraseña</span><input id="newPassword" type="password" autocomplete="new-password" minlength="8" required></label>
+      <label><span>Repetir nueva contraseña</span><input id="repeatPassword" type="password" autocomplete="new-password" minlength="8" required></label>
+      <p id="passwordError" class="form-error" hidden></p>
+      <div class="modal-actions">
+        <button class="secondary-button" type="button" data-close-dialog="passwordDialog">Cancelar</button>
+        <button class="primary-button compact" type="submit">Cambiar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+</body>
+</html>
