@@ -15,3 +15,7 @@ La dirección de la API ya está configurada en `config.js`.
 
 - Incompatibilidades configurables entre pruebas.
 - Bloqueo inmediato y validación de servidor ante asignaciones incompatibles.
+
+
+## v5.1
+Corrección de caché para evitar mezclar versiones del panel y asegurar que el selector de incompatibilidades cargue correctamente.

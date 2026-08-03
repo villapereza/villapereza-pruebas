@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#d8297b"/><stop offset="1" stop-color="#651236"/></linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#g)"/>
+  <circle cx="418" cy="96" r="74" fill="#ffd83d" opacity=".28"/>
+  <circle cx="80" cy="430" r="92" fill="#35a8e0" opacity=".25"/>
+  <path d="M58 362c84-42 136-43 214-2s128 34 190-4" fill="none" stroke="#fff" stroke-opacity=".18" stroke-width="28" stroke-linecap="round"/>
+  <text x="256" y="305" text-anchor="middle" font-family="Arial Rounded MT Bold,Arial,sans-serif" font-size="205" font-weight="900" fill="#ffd83d" stroke="#fff" stroke-width="20" paint-order="stroke">VP</text>
+  <text x="256" y="390" text-anchor="middle" font-family="Arial, sans-serif" font-size="37" font-weight="900" letter-spacing="7" fill="#fff">VILLA PEREZA</text>
+</svg>

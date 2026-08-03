@@ -7,10 +7,19 @@
   <meta name="description" content="Panel de administración de Villa Pereza.">
   <title>Administración · Villa Pereza</title>
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="assets/admin.css">
-  <script defer src="config.js"></script>
-  <script defer src="assets/shared.js"></script>
-  <script defer src="assets/admin.js"></script>
+  <link rel="stylesheet" href="assets/admin.css?v=5.1.0">
+  <script defer src="config.js?v=5.1.0"></script>
+  <script defer src="assets/shared.js?v=5.1.0"></script>
+  <script defer src="assets/admin.js?v=5.1.0"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.getRegistrations().then(registrations => {
+          registrations.forEach(registration => registration.update());
+        }).catch(() => {});
+      });
+    }
+  </script>
 </head>
 <body>
   <noscript>Necesitas activar JavaScript para utilizar esta aplicación.</noscript>

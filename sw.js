@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vp-pruebas-v2.1.0';
+const CACHE_NAME = 'vp-pruebas-v5.1.0';
 const APP_SHELL = [
   './',
   './index.html',
@@ -16,7 +16,11 @@ const APP_SHELL = [
 ];
 
 self.addEventListener('install', event => {
-  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL)).then(() => self.skipWaiting()));
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(APP_SHELL))
+      .then(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener('activate', event => {
@@ -27,29 +31,37 @@ self.addEventListener('activate', event => {
   );
 });
 
+function networkFirst(request, fallbackUrl) {
+  return fetch(request, { cache: 'no-store' })
+    .then(response => {
+      if (response && response.ok) {
+        const copy = response.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
+      }
+      return response;
+    })
+    .catch(() => caches.match(request).then(match => match || (fallbackUrl ? caches.match(fallbackUrl) : undefined)));
+}
+
 self.addEventListener('fetch', event => {
   const request = event.request;
   if (request.method !== 'GET') return;
+
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
 
-  if (request.mode === 'navigate') {
-    event.respondWith(
-      fetch(request)
-        .then(response => {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
-          return response;
-        })
-        .catch(() => caches.match(request).then(match => match || caches.match('./index.html')))
-    );
+  const isCodeOrDocument = request.mode === 'navigate' || /\.(?:html|js|css|webmanifest)$/.test(url.pathname);
+  if (isCodeOrDocument) {
+    event.respondWith(networkFirst(request, request.mode === 'navigate' ? './index.html' : null));
     return;
   }
 
   event.respondWith(
     caches.match(request).then(cached => cached || fetch(request).then(response => {
-      const copy = response.clone();
-      caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
+      if (response && response.ok) {
+        const copy = response.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
+      }
       return response;
     }))
   );

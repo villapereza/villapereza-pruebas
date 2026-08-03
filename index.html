@@ -6,13 +6,22 @@
   <meta name="theme-color" content="#c62070">
   <meta name="description" content="Aplicación del equipo Villa Pereza para gestionar las pruebas de las Olimpiadas.">
   <title>Villa Pereza · Pruebas</title>
-  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="manifest" href="manifest.webmanifest?v=5.1.0">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.svg">
-  <link rel="stylesheet" href="assets/public.css">
-  <script defer src="config.js"></script>
-  <script defer src="assets/shared.js"></script>
-  <script defer src="assets/public.js"></script>
+  <link rel="stylesheet" href="assets/public.css?v=5.1.0">
+  <script defer src="config.js?v=5.1.0"></script>
+  <script defer src="assets/shared.js?v=5.1.0"></script>
+  <script defer src="assets/public.js?v=5.1.0"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.getRegistrations().then(registrations => {
+          registrations.forEach(registration => registration.update());
+        }).catch(() => {});
+      });
+    }
+  </script>
 </head>
 <body>
   <noscript>Necesitas activar JavaScript para utilizar esta aplicación.</noscript>
