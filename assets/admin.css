@@ -184,3 +184,157 @@ code { padding: 3px 6px; border-radius: 5px; color: #45516a; background: #eef2f7
   .request-admin-heading, .assignment-admin-heading { align-items: flex-start; }
   .admin-dialog form { padding: 18px; }
 }
+
+
+/* Actualización 2026-08: cupos, días, PIN y control 2–4 */
+.dashboard-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.distribution-card { grid-column: 1 / -1; }
+.demand-row {
+  grid-template-columns: minmax(0, 1fr) auto;
+  margin: 7px 0;
+  padding: 12px 13px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+}
+.demand-row.capacity-shortage,
+.request-admin-card.capacity-shortage,
+.assignment-admin-card.capacity-shortage {
+  border-color: #efb4bd;
+  background: #fff7f8;
+}
+.demand-row.capacity-surplus,
+.request-admin-card.capacity-surplus,
+.assignment-admin-card.capacity-surplus {
+  border-color: #ead08e;
+  background: #fffaf0;
+}
+.demand-row.capacity-complete,
+.request-admin-card.capacity-complete,
+.assignment-admin-card.capacity-complete {
+  border-color: #a9dcc1;
+  background: #f6fcf8;
+}
+.capacity-admin-label,
+.assignment-capacity-label {
+  display: inline-flex;
+  width: fit-content;
+  padding: 5px 9px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+.capacity-shortage .capacity-admin-label,
+.capacity-shortage .capacity-badge,
+.capacity-shortage .assignment-capacity-label {
+  color: #9b1d30;
+  background: #ffe1e6;
+}
+.capacity-surplus .capacity-admin-label,
+.capacity-surplus .capacity-badge,
+.capacity-surplus .assignment-capacity-label {
+  color: #815400;
+  background: #ffedbd;
+}
+.capacity-complete .capacity-admin-label,
+.capacity-complete .capacity-badge,
+.capacity-complete .assignment-capacity-label {
+  color: #145f3a;
+  background: #dff5e8;
+}
+.capacity-neutral .capacity-admin-label,
+.capacity-neutral .capacity-badge,
+.capacity-neutral .assignment-capacity-label {
+  color: #5f6875;
+  background: #edf0f4;
+}
+.assignment-capacity-label { margin: 12px 0 3px; }
+.distribution-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+.distribution-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  padding: 11px 12px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: #fff;
+}
+.distribution-row > div:last-child {
+  display: grid;
+  gap: 2px;
+  text-align: right;
+}
+.distribution-row > div:last-child b { font-size: 11px; }
+.distribution-row > div:last-child small { color: var(--muted); font-size: 9px; }
+.distribution-row.low,
+.distribution-row.high {
+  border-color: #efb4bd;
+  background: #fff6f7;
+}
+.distribution-row.low > div:last-child b,
+.distribution-row.high > div:last-child b { color: #a51e32; }
+.distribution-row.ok {
+  border-color: #b4dfc8;
+  background: #f7fcf9;
+}
+.distribution-row.ok > div:last-child b { color: #17643e; }
+.day-badge {
+  display: inline-flex;
+  padding: 5px 8px;
+  border-radius: 999px;
+  color: #41536f;
+  background: #edf2f8;
+  font-size: 9px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.pin-pending {
+  display: block;
+  margin-top: 4px;
+  color: #a56b00;
+  font-size: 8px;
+  font-weight: 800;
+}
+.people-selector-group {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.people-selector-group h3 {
+  margin: 0;
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.person-option.not-requested {
+  border-style: dashed;
+  background: #fbfcfe;
+}
+.mandatory-dialog::backdrop {
+  background: rgba(8, 17, 32, .72);
+  backdrop-filter: blur(4px);
+}
+.admin-dialog select {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 0 11px;
+  color: var(--text);
+  background: #fff;
+  font: inherit;
+}
+@media (max-width: 720px) {
+  .dashboard-grid,
+  .distribution-list { grid-template-columns: 1fr; }
+  .distribution-card { grid-column: auto; }
+  .distribution-row { align-items: flex-start; }
+}

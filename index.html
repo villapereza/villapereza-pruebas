@@ -27,7 +27,7 @@
       </div>
       <p class="login-kicker">OLIMPIADAS 2026</p>
       <h1>Gestión de pruebas</h1>
-      <p class="login-copy">Entra con el usuario y la contraseña que te ha dado el equipo.</p>
+      <p class="login-copy">Entra con tu usuario y tu PIN. La primera vez tendrás que elegir uno nuevo.</p>
 
       <form id="loginForm" class="login-form" autocomplete="on">
         <label>
@@ -35,10 +35,10 @@
           <input id="loginUsername" name="username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" required>
         </label>
         <label>
-          <span>Contraseña</span>
+          <span>PIN</span>
           <div class="password-field">
-            <input id="loginPassword" name="password" type="password" autocomplete="current-password" required>
-            <button class="password-toggle" type="button" data-toggle-password="loginPassword" aria-label="Mostrar contraseña">Ver</button>
+            <input id="loginPassword" name="password" type="password" autocomplete="current-password" placeholder="PIN de 4 cifras" required>
+            <button class="password-toggle" type="button" data-toggle-password="loginPassword" aria-label="Mostrar PIN">Ver</button>
           </div>
         </label>
         <p id="loginError" class="form-error" role="alert" hidden></p>
@@ -87,7 +87,11 @@
           <p class="eyebrow">REPARTO DEFINITIVO</p>
           <h2>Resolución de las pruebas</h2>
         </div>
-        <div id="resolutionList" class="card-list"></div>
+        <div id="resolutionViewToggle" class="view-toggle" role="group" aria-label="Forma de ver la resolución">
+          <button class="view-toggle-button active" type="button" data-resolution-view="tests">Por pruebas</button>
+          <button class="view-toggle-button" type="button" data-resolution-view="people">Por personas</button>
+        </div>
+        <div id="resolutionList" class="card-list resolution-groups"></div>
         <div id="resolutionHidden" class="empty-state" hidden>La resolución todavía no se ha publicado.</div>
       </section>
 
@@ -109,7 +113,7 @@
           <div id="mineAssigned" class="tag-list"></div>
         </article>
         <div class="profile-actions">
-          <button id="changePasswordButton" class="secondary-button" type="button">Cambiar contraseña</button>
+          <button id="changePasswordButton" class="secondary-button" type="button">Cambiar PIN</button>
           <button id="logoutButton" class="text-button danger-text" type="button">Cerrar sesión</button>
         </div>
       </section>
@@ -128,17 +132,35 @@
       <div class="modal-heading">
         <div>
           <p class="eyebrow">SEGURIDAD</p>
-          <h2>Cambiar contraseña</h2>
+          <h2>Cambiar PIN</h2>
         </div>
         <button class="icon-button" type="button" data-close-dialog="passwordDialog" aria-label="Cerrar">×</button>
       </div>
-      <label><span>Contraseña actual</span><input id="currentPassword" type="password" autocomplete="current-password" required></label>
-      <label><span>Nueva contraseña</span><input id="newPassword" type="password" autocomplete="new-password" minlength="8" required></label>
-      <label><span>Repetir nueva contraseña</span><input id="repeatPassword" type="password" autocomplete="new-password" minlength="8" required></label>
+      <label><span>PIN actual</span><input id="currentPassword" type="password" inputmode="numeric" pattern="\d{4}" maxlength="4" autocomplete="current-password" required></label>
+      <label><span>Nuevo PIN</span><input id="newPassword" type="password" inputmode="numeric" pattern="\d{4}" maxlength="4" autocomplete="new-password" required></label>
+      <label><span>Repetir nuevo PIN</span><input id="repeatPassword" type="password" inputmode="numeric" pattern="\d{4}" maxlength="4" autocomplete="new-password" required></label>
       <p id="passwordError" class="form-error" hidden></p>
       <div class="modal-actions">
         <button class="secondary-button" type="button" data-close-dialog="passwordDialog">Cancelar</button>
         <button class="primary-button compact" type="submit">Cambiar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="initialPinDialog" class="modal-card mandatory-modal">
+    <form id="initialPinForm" method="dialog">
+      <div class="modal-heading">
+        <div>
+          <p class="eyebrow">PRIMER ACCESO</p>
+          <h2>Elige tu PIN</h2>
+        </div>
+      </div>
+      <p class="modal-copy">Por seguridad, cambia ahora el código temporal por un PIN personal de 4 cifras.</p>
+      <label><span>Nuevo PIN</span><input id="initialPin" type="password" inputmode="numeric" pattern="\d{4}" maxlength="4" autocomplete="new-password" required></label>
+      <label><span>Repetir PIN</span><input id="initialPinRepeat" type="password" inputmode="numeric" pattern="\d{4}" maxlength="4" autocomplete="new-password" required></label>
+      <p id="initialPinError" class="form-error" hidden></p>
+      <div class="modal-actions single-action">
+        <button id="initialPinButton" class="primary-button compact" type="submit">Guardar PIN</button>
       </div>
     </form>
   </dialog>
