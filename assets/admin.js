@@ -105,7 +105,7 @@
     event.preventDefault();
     hideError(els.adminLoginError);
     if (!isValidPin(els.adminPassword.value)) {
-      showError(els.adminLoginError, 'El PIN debe contener al menos una cifra y solo puede incluir números.');
+      showError(els.adminLoginError, 'El PIN debe tener exactamente 4 cifras.');
       return;
     }
     VP.setButtonBusy(els.adminLoginButton, true, 'Accediendo…');
@@ -297,7 +297,7 @@
     els.userId.value = '';
     els.userPasswordLabel.hidden = false;
     els.userPassword.required = true;
-    els.userPassword.value = generatePin();
+    els.userPassword.value = '1234';
     els.userActiveRow.hidden = true;
     els.userActive.checked = true;
     els.userRole.value = 'participante';
@@ -340,7 +340,7 @@
         }, { token: state.session.token });
       } else {
         if (!isValidPin(els.userPassword.value)) {
-          throw new VP.VPError('VALIDATION_ERROR', 'El PIN inicial debe contener al menos una cifra y solo puede incluir números.');
+          throw new VP.VPError('VALIDATION_ERROR', 'El PIN inicial debe tener exactamente 4 cifras.');
         }
         await VP.api('adminCreateUser', {
           name: els.userName.value,
@@ -369,7 +369,7 @@
     hideError(els.resetPasswordError);
     els.resetUserId.value = user.id;
     els.resetPasswordUser.textContent = `${user.name} (@${user.username})`;
-    els.resetPasswordValue.value = generatePin();
+    els.resetPasswordValue.value = '1234';
     els.resetPasswordDialog.showModal();
   }
 
@@ -381,7 +381,7 @@
 
     try {
       if (!isValidPin(els.resetPasswordValue.value)) {
-        throw new VP.VPError('VALIDATION_ERROR', 'El PIN debe contener al menos una cifra y solo puede incluir números.');
+        throw new VP.VPError('VALIDATION_ERROR', 'El PIN debe tener exactamente 4 cifras.');
       }
 
       await VP.api('adminResetPassword', {
@@ -962,7 +962,7 @@
     hideError(els.adminInitialPinError);
 
     if (!isValidPin(els.adminInitialPin.value)) {
-      showError(els.adminInitialPinError, 'El PIN debe contener al menos una cifra y solo puede incluir números.');
+      showError(els.adminInitialPinError, 'El PIN debe tener exactamente 4 cifras.');
       return;
     }
     if (els.adminInitialPin.value !== els.adminInitialPinRepeat.value) {
@@ -1135,7 +1135,7 @@
 
   function bindPinInput(input) {
     input.addEventListener('input', () => {
-      const clean = String(input.value || '').replace(/\D/g, '');
+      const clean = String(input.value || '').replace(/\D/g, '').slice(0, 4);
       if (input.value !== clean) input.value = clean;
     });
   }
@@ -1203,16 +1203,11 @@
   }
 
   function generatePin() {
-    const bytes = new Uint32Array(1);
-    if (window.crypto && window.crypto.getRandomValues) {
-      window.crypto.getRandomValues(bytes);
-      return String(1000 + (bytes[0] % 9000));
-    }
-    return String(Math.floor(1000 + Math.random() * 9000));
+    return '1234';
   }
 
   function isValidPin(value) {
-    return /^\d+$/.test(String(value || ''));
+    return /^\d{4}$/.test(String(value || ''));
   }
 
   function showError(element, message) {
@@ -1238,7 +1233,7 @@
       INCOMPATIBLE_ASSIGNMENT: error.message,
       INVALID_INCOMPATIBILITY: error.message,
       PIN_CHANGE_REQUIRED: 'Debes cambiar el PIN temporal antes de continuar.',
-      NOT_FOUND: 'El servidor no tiene todavía esta opción. Actualiza e implementa el backend v6.3.',
+      NOT_FOUND: 'El servidor no tiene todavía esta opción. Actualiza e implementa el backend v7.',
       VALIDATION_ERROR: error.message
     };
     return map[error.code] || error.message || 'No se ha podido completar la operación.';

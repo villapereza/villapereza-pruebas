@@ -113,7 +113,7 @@
     event.preventDefault();
     hideError(els.loginError);
     if (!isValidPin(els.loginPassword.value)) {
-      showError(els.loginError, 'El PIN debe contener al menos una cifra y solo puede incluir números.');
+      showError(els.loginError, 'El PIN debe tener exactamente 4 cifras.');
       return;
     }
     VP.setButtonBusy(els.loginButton, true, 'Entrando…');
@@ -553,7 +553,7 @@
     hideError(els.initialPinError);
 
     if (!isValidPin(els.initialPin.value)) {
-      showError(els.initialPinError, 'El PIN debe contener al menos una cifra y solo puede incluir números.');
+      showError(els.initialPinError, 'El PIN debe tener exactamente 4 cifras.');
       return;
     }
     if (els.initialPin.value !== els.initialPinRepeat.value) {
@@ -585,7 +585,7 @@
     hideError(els.passwordError);
 
     if (!isValidPin(els.currentPassword.value) || !isValidPin(els.newPassword.value)) {
-      showError(els.passwordError, 'Los PIN deben contener al menos una cifra y solo pueden incluir números.');
+      showError(els.passwordError, 'Los PIN deben tener exactamente 4 cifras.');
       return;
     }
     if (els.newPassword.value !== els.repeatPassword.value) {
@@ -748,7 +748,7 @@
   }
 
   function isValidPin(value) {
-    return /^\d+$/.test(String(value || ''));
+    return /^\d{4}$/.test(String(value || ''));
   }
 
   function showLogin() {
@@ -765,7 +765,7 @@
 
   function bindPinInput(input) {
     input.addEventListener('input', () => {
-      const clean = String(input.value || '').replace(/\D/g, '');
+      const clean = String(input.value || '').replace(/\D/g, '').slice(0, 4);
       if (input.value !== clean) input.value = clean;
     });
   }
@@ -787,7 +787,7 @@
       TIMEOUT: 'La conexión está tardando demasiado. Inténtalo otra vez.',
       INVALID_PASSWORD: 'El PIN actual no es correcto.',
       PIN_CHANGE_REQUIRED: 'Debes cambiar el PIN temporal antes de continuar.',
-      NOT_FOUND: 'El servidor no tiene todavía esta opción. Actualiza e implementa el backend v6.3.',
+      NOT_FOUND: 'El servidor no tiene todavía esta opción. Actualiza e implementa el backend v7.',
       VALIDATION_ERROR: error.message
     };
     return map[error.code] || error.message || 'No se ha podido completar la operación.';

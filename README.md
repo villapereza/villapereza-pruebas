@@ -1,48 +1,18 @@
-# Villa Pereza · Gestión de pruebas
+# Villa Pereza · Gestión de pruebas — v7
 
-Aplicación web móvil para gestionar las solicitudes y asignaciones de las pruebas de las Olimpiadas.
+Aplicación móvil alojada en GitHub Pages con Google Apps Script y Google Sheets como backend.
 
-- `index.html`: aplicación del equipo.
-- `admin.html`: panel de administración.
-- Google Sheets: base de datos.
-- Google Apps Script: API y autenticación.
-- GitHub Pages: alojamiento de la interfaz.
+## PIN
 
-La dirección de la API ya está configurada en `config.js`.
+- Todos los PIN deben tener exactamente 4 cifras.
+- El PIN inicial por defecto al crear o restablecer una cuenta es `1234`.
+- La primera vez que una persona entra con el PIN temporal, debe elegir otro PIN de 4 cifras.
+- El administrador puede restablecer el PIN de una persona a `1234` desde el panel.
+- En Google Sheets existe además el menú **Villa Pereza → Restablecer PIN de participantes a 1234** para una migración masiva opcional.
 
+## Instalación
 
-## Versión 2.1.0
-
-- Incompatibilidades configurables entre pruebas.
-- Bloqueo inmediato y validación de servidor ante asignaciones incompatibles.
-
-
-## v5.1
-Corrección de caché para evitar mezclar versiones del panel y asegurar que el selector de incompatibilidades cargue correctamente.
-
-
-## Versión 6.0
-- Control de usuarios con sus pruebas asignadas.
-- Edición del reparto completo por persona.
-- PIN exclusivamente numérico, con cualquier longitud a partir de 1 cifra.
-
-
-## Versión 6.1
-- El PIN puede tener cualquier longitud desde 1 cifra.
-- Se mantienen únicamente caracteres numéricos.
-
-
-## v6.3
-- Recarga completa al cambiar de pestaña.
-- Guarda las solicitudes pendientes antes de mostrar otra sección.
-- Recarga completa al volver a la aplicación.
-
-
-## Cambios v6.3
-
-- La selección optimista ya no puede ser sobrescrita por una lectura antigua que termine más tarde.
-- La cola local se separa por usuario y conserva incluso una selección vacía.
-- Los reintentos no eliminan cambios más recientes.
-- Al cambiar de pestaña se guardan primero los cambios y después se recargan todos los datos.
-- Los PIN son numéricos, con una o más cifras y sin longitud máxima fijada por la aplicación.
-- Las acciones de cambio y restablecimiento de PIN usan nombres compatibles con versiones anteriores del backend.
+1. Sustituye `Code.gs` por `Code_Villa_Pereza_v7.gs`.
+2. Publica una nueva versión de la implementación existente de Apps Script.
+3. Sube todo el contenido de esta carpeta a la raíz del repositorio de GitHub.
+4. Abre la web con `?v=7` y realiza una recarga completa la primera vez.

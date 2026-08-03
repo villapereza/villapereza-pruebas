@@ -6,13 +6,13 @@
   <meta name="theme-color" content="#c62070">
   <meta name="description" content="Aplicación del equipo Villa Pereza para gestionar las pruebas de las Olimpiadas.">
   <title>Villa Pereza · Pruebas</title>
-  <link rel="manifest" href="manifest.webmanifest?v=6.3.0">
+  <link rel="manifest" href="manifest.webmanifest?v=7.0.0">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.svg">
-  <link rel="stylesheet" href="assets/public.css?v=6.3.0">
-  <script defer src="config.js?v=6.3.0"></script>
-  <script defer src="assets/shared.js?v=6.3.0"></script>
-  <script defer src="assets/public.js?v=6.3.0"></script>
+  <link rel="stylesheet" href="assets/public.css?v=7.0.0">
+  <script defer src="config.js?v=7.0.0"></script>
+  <script defer src="assets/shared.js?v=7.0.0"></script>
+  <script defer src="assets/public.js?v=7.0.0"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
@@ -46,7 +46,7 @@
         <label>
           <span>PIN</span>
           <div class="password-field">
-            <input id="loginPassword" name="password" type="password" inputmode="numeric" pattern="[0-9]+" minlength="1" autocomplete="current-password" placeholder="PIN numérico" required>
+            <input id="loginPassword" name="password" type="password" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" autocomplete="current-password" placeholder="4 cifras" required>
             <button class="password-toggle" type="button" data-toggle-password="loginPassword" aria-label="Mostrar PIN">Ver</button>
           </div>
         </label>
@@ -145,9 +145,9 @@
         </div>
         <button class="icon-button" type="button" data-close-dialog="passwordDialog" aria-label="Cerrar">×</button>
       </div>
-      <label><span>PIN actual</span><input id="currentPassword" type="password" inputmode="numeric" pattern="[0-9]+" minlength="1" autocomplete="current-password" required></label>
-      <label><span>Nuevo PIN</span><input id="newPassword" type="password" inputmode="numeric" pattern="[0-9]+" minlength="1" autocomplete="new-password" required></label>
-      <label><span>Repetir nuevo PIN</span><input id="repeatPassword" type="password" inputmode="numeric" pattern="[0-9]+" minlength="1" autocomplete="new-password" required></label>
+      <label><span>PIN actual</span><input id="currentPassword" type="password" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" autocomplete="current-password" required></label>
+      <label><span>Nuevo PIN</span><input id="newPassword" type="password" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" autocomplete="new-password" required></label>
+      <label><span>Repetir nuevo PIN</span><input id="repeatPassword" type="password" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" autocomplete="new-password" required></label>
       <p id="passwordError" class="form-error" hidden></p>
       <div class="modal-actions">
         <button class="secondary-button" type="button" data-close-dialog="passwordDialog">Cancelar</button>
@@ -164,9 +164,9 @@
           <h2>Elige tu PIN</h2>
         </div>
       </div>
-      <p class="modal-copy">Por seguridad, cambia ahora el código temporal por un PIN numérico personal.</p>
-      <label><span>Nuevo PIN</span><input id="initialPin" type="password" inputmode="numeric" pattern="[0-9]+" minlength="1" autocomplete="new-password" required></label>
-      <label><span>Repetir PIN</span><input id="initialPinRepeat" type="password" inputmode="numeric" pattern="[0-9]+" minlength="1" autocomplete="new-password" required></label>
+      <p class="modal-copy">Por seguridad, cambia ahora el código temporal por un PIN personal de 4 cifras.</p>
+      <label><span>Nuevo PIN</span><input id="initialPin" type="password" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" autocomplete="new-password" required></label>
+      <label><span>Repetir PIN</span><input id="initialPinRepeat" type="password" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" autocomplete="new-password" required></label>
       <p id="initialPinError" class="form-error" hidden></p>
       <div class="modal-actions single-action">
         <button id="initialPinButton" class="primary-button compact" type="submit">Guardar PIN</button>
