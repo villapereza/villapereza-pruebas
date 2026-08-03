@@ -1,8 +1,9 @@
 (() => {
   'use strict';
 
-  const POLL_MS = 1000;
-  const DAY_ORDER = ['Jueves 21', 'Viernes 22', 'Sábado 23', 'Sin día asignado'];
+  const POLL_MS = Number((window.VP_CONFIG || {}).POLL_INTERVAL_MS) || 1000;
+  const EXPECTED_API_VERSION = (window.VP_CONFIG || {}).REQUIRED_API_VERSION || '8.0.0';
+  const DAY_ORDER = ['Viernes 21', 'Sábado 22', 'Domingo 23', 'Sin día asignado'];
 
   const state = {
     session: null,
@@ -29,7 +30,7 @@
     cacheElements();
     VP.bindCommonControls();
     bindEvents();
-    registerServiceWorker();
+    showBackendVersion();
 
     state.session = VP.getSession();
     if (state.session) await VP.migrateLegacyRequests(state.session.user && state.session.user.id);
@@ -56,7 +57,7 @@
       'mineUsername', 'mineRequested', 'mineAssigned', 'profileButton', 'logoutButton', 'changePasswordButton',
       'passwordDialog', 'passwordForm', 'currentPassword', 'newPassword', 'repeatPassword', 'passwordError',
       'initialPinDialog', 'initialPinForm', 'initialPin', 'initialPinRepeat', 'initialPinError', 'initialPinButton',
-      'toast'
+      'toast', 'publicVersionStatus'
     ].forEach(id => { els[id] = document.getElementById(id); });
   }
 
@@ -109,6 +110,20 @@
     });
   }
 
+  async function showBackendVersion() {
+    if (!els.publicVersionStatus) return;
+    const webVersion = (window.VP_CONFIG && window.VP_CONFIG.APP_VERSION) || '8.0.0';
+    try {
+      const info = await VP.api('ping');
+      const apiVersion = info && info.apiVersion ? info.apiVersion : 'desconocida';
+      const compatible = apiVersion === EXPECTED_API_VERSION;
+      els.publicVersionStatus.textContent = `Web ${webVersion} · API ${apiVersion}${compatible ? '' : ' · ACTUALIZACIÓN NECESARIA'}`;
+      els.publicVersionStatus.classList.toggle('version-mismatch', !compatible);
+    } catch (_) {
+      els.publicVersionStatus.textContent = `Web ${webVersion} · API sin conexión`;
+    }
+  }
+
   async function handleLogin(event) {
     event.preventDefault();
     hideError(els.loginError);
@@ -119,6 +134,7 @@
     VP.setButtonBusy(els.loginButton, true, 'Entrando…');
 
     try {
+      await assertBackendCompatible();
       const result = await VP.api('login', {
         username: els.loginUsername.value,
         password: els.loginPassword.value
@@ -159,6 +175,7 @@
       }
 
       data = await VP.api('getPublicData', {}, { token: state.session.token });
+      assertDataVersion(data);
       VP.savePublicCache(data);
     } catch (error) {
       if (error.code === 'UNAUTHORIZED') {
@@ -171,8 +188,15 @@
         markPinChangeRequired();
         return;
       }
+      if (error.code === 'VERSION_MISMATCH') {
+        state.loadBusy = false;
+        endSession();
+        showError(els.loginError, readableError(error));
+        return;
+      }
 
       data = VP.getPublicCache();
+      if (data && String(data.apiVersion || '') !== EXPECTED_API_VERSION) data = null;
       if (!data) {
         if (!options.quiet) VP.showToast(els.toast, 'No se han podido cargar los datos. Comprueba la conexión.');
         state.loadBusy = false;
@@ -397,7 +421,7 @@
 
   async function forceLoadData() {
     let attempts = 0;
-    while (state.loadBusy && attempts < 200) {
+    while (state.loadBusy && attempts < 1000) {
       await new Promise(resolve => window.setTimeout(resolve, 25));
       attempts += 1;
     }
@@ -732,7 +756,14 @@
   }
 
   function normalizedDay(day) {
-    return day && DAY_ORDER.includes(day) ? day : 'Sin día asignado';
+    const value = String(day || '').trim();
+    const legacy = {
+      'Jueves 21': 'Viernes 21',
+      'Viernes 22': 'Sábado 22',
+      'Sábado 23': 'Domingo 23'
+    };
+    const normalized = legacy[value] || value;
+    return DAY_ORDER.includes(normalized) ? normalized : 'Sin día asignado';
   }
 
   function dayLabel(day) {
@@ -745,6 +776,22 @@
       (groups[day] ||= []).push(test);
       return groups;
     }, {});
+  }
+
+  async function assertBackendCompatible() {
+    const info = await VP.api('ping');
+    const apiVersion = String((info && info.apiVersion) || '');
+    if (apiVersion !== EXPECTED_API_VERSION) {
+      throw new VP.VPError('VERSION_MISMATCH', `La web es ${window.VP_CONFIG.APP_VERSION} y la API es ${apiVersion || 'desconocida'}. Actualiza Apps Script antes de continuar.`);
+    }
+    return info;
+  }
+
+  function assertDataVersion(data) {
+    const apiVersion = String((data && data.apiVersion) || '');
+    if (apiVersion !== EXPECTED_API_VERSION) {
+      throw new VP.VPError('VERSION_MISMATCH', `La API cargada es ${apiVersion} y esta web necesita ${EXPECTED_API_VERSION}.`);
+    }
   }
 
   function isValidPin(value) {
@@ -787,15 +834,11 @@
       TIMEOUT: 'La conexión está tardando demasiado. Inténtalo otra vez.',
       INVALID_PASSWORD: 'El PIN actual no es correcto.',
       PIN_CHANGE_REQUIRED: 'Debes cambiar el PIN temporal antes de continuar.',
-      NOT_FOUND: 'El servidor no tiene todavía esta opción. Actualiza e implementa el backend v7.',
-      VALIDATION_ERROR: error.message
+      NOT_FOUND: error.message || 'No se ha encontrado el elemento solicitado.',
+      VALIDATION_ERROR: error.message,
+      VERSION_MISMATCH: error.message
     };
     return map[error.code] || error.message || 'No se ha podido completar la operación.';
   }
 
-  function registerServiceWorker() {
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js').then(registration => registration.update()).catch(() => {});
-    }
-  }
 })();

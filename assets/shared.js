@@ -4,8 +4,9 @@
   const config = window.VP_CONFIG || {};
   const DB_NAME = 'villa-pereza-pruebas';
   const DB_VERSION = 1;
-  const SESSION_KEY = 'vp_session_v1';
-  const PUBLIC_CACHE_KEY = 'vp_public_cache_v1';
+  const SESSION_KEY = 'vp_session_v8';
+  const LEGACY_SESSION_KEYS = ['vp_session_v1'];
+  const PUBLIC_CACHE_KEY = 'vp_public_cache_v8';
   const LEGACY_SELECTION_KEY = 'vp_local_selection_v1';
   const USER_SELECTION_PREFIX = 'vp_local_selection_v2:';
 
@@ -58,13 +59,38 @@
     }
   }
 
+
+  async function clearObsoleteBrowserCaches() {
+    try {
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(registrations.map(registration => registration.unregister()));
+      }
+      if ('caches' in window) {
+        const names = await caches.keys();
+        await Promise.all(names.map(name => caches.delete(name)));
+      }
+    } catch (_) {}
+  }
+
   function saveSession(session) {
     localStorage.setItem(SESSION_KEY, JSON.stringify(session));
   }
 
   function getSession() {
     try {
-      const session = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
+      let raw = localStorage.getItem(SESSION_KEY);
+      if (!raw) {
+        for (const legacyKey of LEGACY_SESSION_KEYS) {
+          raw = localStorage.getItem(legacyKey);
+          if (raw) {
+            localStorage.setItem(SESSION_KEY, raw);
+            localStorage.removeItem(legacyKey);
+            break;
+          }
+        }
+      }
+      const session = JSON.parse(raw || 'null');
       if (!session || !session.token || !session.user) return null;
       if (session.expiresAt && new Date(session.expiresAt).getTime() <= Date.now()) {
         clearSession();
@@ -79,6 +105,7 @@
 
   function clearSession() {
     localStorage.removeItem(SESSION_KEY);
+    LEGACY_SESSION_KEYS.forEach(key => localStorage.removeItem(key));
   }
 
   function savePublicCache(data) {
@@ -420,6 +447,7 @@
     toBoolean,
     showToast,
     setButtonBusy,
-    bindCommonControls
+    bindCommonControls,
+    clearObsoleteBrowserCaches
   });
 })();

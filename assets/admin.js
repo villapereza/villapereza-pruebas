@@ -1,8 +1,9 @@
 (() => {
   'use strict';
 
-  const POLL_MS = 1000;
-  const DAY_ORDER = ['Jueves 21', 'Viernes 22', 'Sábado 23', 'Sin día asignado'];
+  const POLL_MS = Number((window.VP_CONFIG || {}).POLL_INTERVAL_MS) || 1000;
+  const EXPECTED_API_VERSION = (window.VP_CONFIG || {}).REQUIRED_API_VERSION || '8.0.0';
+  const DAY_ORDER = ['Viernes 21', 'Sábado 22', 'Domingo 23', 'Sin día asignado'];
 
   const state = {
     session: null,
@@ -21,6 +22,7 @@
     cacheElements();
     VP.bindCommonControls();
     bindEvents();
+    showBackendVersion();
 
     state.session = VP.getSession();
     if (!state.session) {
@@ -61,7 +63,7 @@
       'assignmentFormError', 'userAssignmentsDialog', 'userAssignmentsForm', 'userAssignmentsTitle', 'userAssignmentsUserId',
       'userAssignmentsIdentity', 'userAssignmentsCount', 'userAssignmentsTests', 'userAssignmentsError',
       'adminInitialPinDialog', 'adminInitialPinForm', 'adminInitialPin',
-      'adminInitialPinRepeat', 'adminInitialPinError', 'adminInitialPinButton', 'adminToast'
+      'adminInitialPinRepeat', 'adminInitialPinError', 'adminInitialPinButton', 'adminToast', 'adminVersionStatus'
     ].forEach(id => { els[id] = document.getElementById(id); });
   }
 
@@ -101,6 +103,21 @@
     });
   }
 
+  async function showBackendVersion() {
+    if (!els.adminVersionStatus) return;
+    const webVersion = (window.VP_CONFIG && window.VP_CONFIG.APP_VERSION) || '8.0.0';
+    try {
+      const info = await VP.api('ping');
+      const apiVersion = info && info.apiVersion ? info.apiVersion : 'desconocida';
+      const compatible = apiVersion === EXPECTED_API_VERSION;
+      els.adminVersionStatus.textContent = `Web ${webVersion} · API ${apiVersion}${compatible ? '' : ' · ACTUALIZACIÓN NECESARIA'}`;
+      els.adminVersionStatus.dataset.apiVersion = apiVersion;
+      els.adminVersionStatus.classList.toggle('version-mismatch', !compatible);
+    } catch (_) {
+      els.adminVersionStatus.textContent = `Web ${webVersion} · API sin conexión`;
+    }
+  }
+
   async function handleLogin(event) {
     event.preventDefault();
     hideError(els.adminLoginError);
@@ -111,6 +128,7 @@
     VP.setButtonBusy(els.adminLoginButton, true, 'Accediendo…');
 
     try {
+      await assertBackendCompatible();
       const result = await VP.api('login', {
         username: els.adminUsername.value,
         password: els.adminPassword.value
@@ -145,6 +163,7 @@
 
     try {
       state.data = await VP.api('adminGetData', {}, { token: state.session.token });
+      assertDataVersion(state.data);
       const configVersion = state.data.config && state.data.config.version_datos;
       state.lastVersion = String(configVersion || state.lastVersion || '');
       renderAll();
@@ -162,6 +181,13 @@
       }
       if (error.code === 'FORBIDDEN') {
         showAdminLogin('La cuenta iniciada no tiene permisos de administración.');
+        return;
+      }
+      if (error.code === 'VERSION_MISMATCH') {
+        VP.clearSession();
+        state.session = null;
+        stopPolling();
+        showAdminLogin(readableError(error));
         return;
       }
       if (!options.quiet) VP.showToast(els.adminToast, readableError(error));
@@ -190,8 +216,9 @@
 
     els.metricUsers.textContent = String(activeUsers.length);
     els.metricTests.textContent = String(activeTests.length);
-    els.metricRequests.textContent = String(state.data.requests.length);
-    els.metricAssignments.textContent = String(state.data.assignments.length);
+    const activeTestIds = new Set(activeTests.map(test => test.id));
+    els.metricRequests.textContent = String(state.data.requests.filter(item => activeTestIds.has(item.testId)).length);
+    els.metricAssignments.textContent = String(state.data.assignments.filter(item => activeTestIds.has(item.testId)).length);
 
     const config = state.data.config || {};
     const statuses = [
@@ -250,7 +277,7 @@
     els.usersTableBody.innerHTML = state.data.users.map(user => {
       const assignedTests = (assignmentsByUser[user.id] || [])
         .map(item => testsById[item.testId])
-        .filter(Boolean)
+        .filter(test => test && test.active)
         .sort((a, b) => dayIndex(a.day) - dayIndex(b.day) || a.order - b.order || sortByName(a, b));
       const isParticipant = user.role !== 'admin';
       const count = assignedTests.length;
@@ -544,7 +571,7 @@
 
     VP.setButtonBusy(button, true, 'Guardando…');
     try {
-      await VP.api('adminSetUserAssignments', { userId, testIds }, { token: state.session.token });
+      await saveUserAssignmentsCompatible(userId, testIds);
       els.userAssignmentsDialog.close();
       await loadAdminData({ quiet: true });
       VP.showToast(els.adminToast, `Reparto de ${user.name} actualizado.`);
@@ -553,6 +580,10 @@
     } finally {
       VP.setButtonBusy(button, false);
     }
+  }
+
+  async function saveUserAssignmentsCompatible(userId, desiredTestIds) {
+    return VP.api('adminSetUserAssignments', { userId, testIds: desiredTestIds }, { token: state.session.token });
   }
 
   function renderTests() {
@@ -1002,7 +1033,7 @@
   async function forceLoadAdminData() {
     if (!state.session || (state.session.user && state.session.user.mustChangePin)) return;
     let attempts = 0;
-    while (state.loadBusy && attempts < 200) {
+    while (state.loadBusy && attempts < 1000) {
       await new Promise(resolve => window.setTimeout(resolve, 25));
       attempts += 1;
     }
@@ -1082,8 +1113,9 @@
 
   function assignmentCounts(assignments = state.data.assignments) {
     const counts = Object.fromEntries(participantUsers().map(user => [user.id, 0]));
+    const activeTestIds = new Set((state.data.tests || []).filter(test => test.active).map(test => String(test.id)));
     (assignments || []).forEach(item => {
-      if (counts[item.userId] !== undefined) counts[item.userId] += 1;
+      if (activeTestIds.has(String(item.testId)) && counts[item.userId] !== undefined) counts[item.userId] += 1;
     });
     return counts;
   }
@@ -1149,7 +1181,14 @@
   }
 
   function dayLabel(day) {
-    return day && DAY_ORDER.includes(day) ? day : 'Sin día asignado';
+    const value = String(day || '').trim();
+    const legacy = {
+      'Jueves 21': 'Viernes 21',
+      'Viernes 22': 'Sábado 22',
+      'Sábado 23': 'Domingo 23'
+    };
+    const normalized = legacy[value] || value;
+    return DAY_ORDER.includes(normalized) ? normalized : 'Sin día asignado';
   }
 
   function markPinChangeRequired() {
@@ -1202,6 +1241,22 @@
     return String(a.name || '').localeCompare(String(b.name || ''), 'es', { sensitivity: 'base' });
   }
 
+  async function assertBackendCompatible() {
+    const info = await VP.api('ping');
+    const apiVersion = String((info && info.apiVersion) || '');
+    if (apiVersion !== EXPECTED_API_VERSION) {
+      throw new VP.VPError('VERSION_MISMATCH', `La web es ${window.VP_CONFIG.APP_VERSION} y la API es ${apiVersion || 'desconocida'}. Actualiza Apps Script antes de continuar.`);
+    }
+    return info;
+  }
+
+  function assertDataVersion(data) {
+    const apiVersion = String((data && data.apiVersion) || '');
+    if (apiVersion !== EXPECTED_API_VERSION) {
+      throw new VP.VPError('VERSION_MISMATCH', `La API cargada es ${apiVersion} y esta web necesita ${EXPECTED_API_VERSION}.`);
+    }
+  }
+
   function generatePin() {
     return '1234';
   }
@@ -1233,8 +1288,9 @@
       INCOMPATIBLE_ASSIGNMENT: error.message,
       INVALID_INCOMPATIBILITY: error.message,
       PIN_CHANGE_REQUIRED: 'Debes cambiar el PIN temporal antes de continuar.',
-      NOT_FOUND: 'El servidor no tiene todavía esta opción. Actualiza e implementa el backend v7.',
-      VALIDATION_ERROR: error.message
+      NOT_FOUND: error.message || 'No se ha encontrado el elemento solicitado.',
+      VALIDATION_ERROR: error.message,
+      VERSION_MISMATCH: error.message
     };
     return map[error.code] || error.message || 'No se ha podido completar la operación.';
   }

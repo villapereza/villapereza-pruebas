@@ -476,3 +476,7 @@ code { padding: 3px 6px; border-radius: 5px; color: #45516a; background: #eef2f7
   .user-assignments-dialog { width: calc(100vw - 18px); }
   .user-test-selector { max-height: 54vh; }
 }
+
+.version-status { margin: 12px 0 0; font-size: 12px; opacity: .72; text-align: center; }
+
+.version-status.version-mismatch{color:#b42318!important;font-weight:800}.version-status.version-mismatch::before{content:"⚠ ";}

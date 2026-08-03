@@ -540,3 +540,7 @@ input:focus, textarea:focus, select:focus { border-color: var(--pink); box-shado
   backdrop-filter: blur(4px);
 }
 .single-action { grid-template-columns: 1fr !important; }
+
+.version-status { margin: 12px 0 0; font-size: 12px; opacity: .72; text-align: center; }
+
+.version-status.version-mismatch{color:#b42318!important;font-weight:800}.version-status.version-mismatch::before{content:"⚠ ";}
