@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vp-pruebas-v6.2.0';
+const CACHE_NAME = 'vp-pruebas-v6.3.0';
 const APP_SHELL = [
   './',
   './index.html',

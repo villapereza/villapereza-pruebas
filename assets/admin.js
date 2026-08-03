@@ -345,6 +345,7 @@
         await VP.api('adminCreateUser', {
           name: els.userName.value,
           username: els.userUsername.value,
+          password: els.userPassword.value,
           pin: els.userPassword.value,
           role: els.userRole.value
         }, { token: state.session.token });
@@ -383,8 +384,9 @@
         throw new VP.VPError('VALIDATION_ERROR', 'El PIN debe contener al menos una cifra y solo puede incluir números.');
       }
 
-      await VP.api('adminResetPin', {
+      await VP.api('adminResetPassword', {
         userId: els.resetUserId.value,
+        newPassword: els.resetPasswordValue.value,
         newPin: els.resetPasswordValue.value
       }, { token: state.session.token });
 
@@ -1236,6 +1238,7 @@
       INCOMPATIBLE_ASSIGNMENT: error.message,
       INVALID_INCOMPATIBILITY: error.message,
       PIN_CHANGE_REQUIRED: 'Debes cambiar el PIN temporal antes de continuar.',
+      NOT_FOUND: 'El servidor no tiene todavía esta opción. Actualiza e implementa el backend v6.3.',
       VALIDATION_ERROR: error.message
     };
     return map[error.code] || error.message || 'No se ha podido completar la operación.';

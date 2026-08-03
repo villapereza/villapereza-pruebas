@@ -6,7 +6,8 @@
   const DB_VERSION = 1;
   const SESSION_KEY = 'vp_session_v1';
   const PUBLIC_CACHE_KEY = 'vp_public_cache_v1';
-  const LOCAL_SELECTION_KEY = 'vp_local_selection_v1';
+  const LEGACY_SELECTION_KEY = 'vp_local_selection_v1';
+  const USER_SELECTION_PREFIX = 'vp_local_selection_v2:';
 
   class VPError extends Error {
     constructor(code, message, details) {
@@ -95,22 +96,57 @@
     }
   }
 
-  function saveLocalSelection(ids) {
-    const value = Array.from(new Set((ids || []).map(String)));
-    localStorage.setItem(LOCAL_SELECTION_KEY, JSON.stringify(value));
+  function normalizeUserId(userId) {
+    return String(userId || '').trim();
   }
 
-  function getLocalSelection() {
+  function selectionKey(userId) {
+    return USER_SELECTION_PREFIX + encodeURIComponent(normalizeUserId(userId));
+  }
+
+  function saveLocalSelection(userId, ids, revision) {
+    const normalizedUserId = normalizeUserId(userId);
+    if (!normalizedUserId) return null;
+    const record = {
+      userId: normalizedUserId,
+      ids: Array.from(new Set((ids || []).map(String))),
+      revision: Number.isFinite(Number(revision)) ? Number(revision) : Date.now(),
+      savedAt: Date.now()
+    };
+    localStorage.setItem(selectionKey(normalizedUserId), JSON.stringify(record));
+    return record;
+  }
+
+  function getLocalSelection(userId) {
+    const normalizedUserId = normalizeUserId(userId);
+    if (!normalizedUserId) return null;
     try {
-      const value = JSON.parse(localStorage.getItem(LOCAL_SELECTION_KEY) || '[]');
-      return Array.isArray(value) ? value.map(String) : [];
+      const parsed = JSON.parse(localStorage.getItem(selectionKey(normalizedUserId)) || 'null');
+      if (!parsed || !Array.isArray(parsed.ids)) return null;
+      return {
+        userId: normalizedUserId,
+        ids: parsed.ids.map(String),
+        revision: Number(parsed.revision) || 0,
+        savedAt: Number(parsed.savedAt) || 0
+      };
     } catch (_) {
-      return [];
+      return null;
     }
   }
 
-  function clearLocalSelection() {
-    localStorage.removeItem(LOCAL_SELECTION_KEY);
+  function clearLocalSelection(userId, expectedRevision) {
+    const normalizedUserId = normalizeUserId(userId);
+    if (!normalizedUserId) return false;
+    const current = getLocalSelection(normalizedUserId);
+    if (expectedRevision !== undefined && current && Number(current.revision) !== Number(expectedRevision)) {
+      return false;
+    }
+    localStorage.removeItem(selectionKey(normalizedUserId));
+    return true;
+  }
+
+  function clearLegacyLocalSelection() {
+    localStorage.removeItem(LEGACY_SELECTION_KEY);
   }
 
   function openDb() {
@@ -131,77 +167,165 @@
     });
   }
 
-  async function withStore(mode, handler) {
+  async function putOutboxRecord(record) {
     const db = await openDb();
     try {
-      return await new Promise((resolve, reject) => {
-        const transaction = db.transaction('outbox', mode);
-        const store = transaction.objectStore('outbox');
-        let result;
-        try {
-          result = handler(store, transaction);
-        } catch (error) {
-          reject(error);
-          return;
-        }
-        transaction.oncomplete = () => resolve(result);
-        transaction.onerror = () => reject(transaction.error);
-        transaction.onabort = () => reject(transaction.error || new Error('Operación cancelada'));
+      await new Promise((resolve, reject) => {
+        const tx = db.transaction('outbox', 'readwrite');
+        tx.objectStore('outbox').put(record);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+        tx.onabort = () => reject(tx.error || new Error('Operación cancelada'));
       });
     } finally {
       db.close();
     }
   }
 
-  async function queueMyRequests(testIds) {
+  async function getOutboxRecord(id) {
+    const db = await openDb();
+    try {
+      return await new Promise((resolve, reject) => {
+        const tx = db.transaction('outbox', 'readonly');
+        const request = tx.objectStore('outbox').get(id);
+        request.onsuccess = () => resolve(request.result || null);
+        request.onerror = () => reject(request.error);
+      });
+    } finally {
+      db.close();
+    }
+  }
+
+  async function deleteOutboxRecordIfMatches(id, operationId) {
+    const db = await openDb();
+    try {
+      return await new Promise((resolve, reject) => {
+        const tx = db.transaction('outbox', 'readwrite');
+        const store = tx.objectStore('outbox');
+        let removed = false;
+        const request = store.get(id);
+        request.onsuccess = () => {
+          const current = request.result;
+          if (current && (!operationId || current.operationId === operationId)) {
+            store.delete(id);
+            removed = true;
+          }
+        };
+        request.onerror = () => reject(request.error);
+        tx.oncomplete = () => resolve(removed);
+        tx.onerror = () => reject(tx.error);
+        tx.onabort = () => reject(tx.error || new Error('Operación cancelada'));
+      });
+    } finally {
+      db.close();
+    }
+  }
+
+  function outboxId(userId) {
+    return `set-my-requests:${normalizeUserId(userId)}`;
+  }
+
+  async function queueMyRequests(userId, testIds, revision) {
+    const normalizedUserId = normalizeUserId(userId);
+    if (!normalizedUserId) throw new VPError('NO_USER', 'No se ha identificado al usuario.');
     const record = {
-      id: 'set-my-requests',
+      id: outboxId(normalizedUserId),
       action: 'setMyRequests',
       operationId: createOperationId(),
+      userId: normalizedUserId,
+      revision: Number.isFinite(Number(revision)) ? Number(revision) : Date.now(),
       testIds: Array.from(new Set((testIds || []).map(String))),
       queuedAt: new Date().toISOString()
     };
-    await withStore('readwrite', store => store.put(record));
+    await putOutboxRecord(record);
     return record;
   }
 
-  async function getQueuedRequests() {
+  async function getQueuedRequests(userId) {
+    const normalizedUserId = normalizeUserId(userId);
+    if (!normalizedUserId) return null;
     try {
-      const db = await openDb();
-      return await new Promise((resolve, reject) => {
-        const tx = db.transaction('outbox', 'readonly');
-        const request = tx.objectStore('outbox').get('set-my-requests');
-        request.onsuccess = () => resolve(request.result || null);
-        request.onerror = () => reject(request.error);
-        tx.oncomplete = () => db.close();
-      });
+      return await getOutboxRecord(outboxId(normalizedUserId));
     } catch (_) {
       return null;
     }
   }
 
-  async function removeQueuedRequests() {
+  async function removeQueuedRequests(userId, operationId) {
+    const normalizedUserId = normalizeUserId(userId);
+    if (!normalizedUserId) return false;
     try {
-      await withStore('readwrite', store => store.delete('set-my-requests'));
+      return await deleteOutboxRecordIfMatches(outboxId(normalizedUserId), operationId);
+    } catch (_) {
+      return false;
+    }
+  }
+
+  async function migrateLegacyRequests(userId) {
+    const normalizedUserId = normalizeUserId(userId);
+    if (!normalizedUserId) {
+      await discardLegacyRequests();
+      return null;
+    }
+
+    let legacySelection = [];
+    const legacySelectionPresent = localStorage.getItem(LEGACY_SELECTION_KEY) !== null;
+    try {
+      const parsed = JSON.parse(localStorage.getItem(LEGACY_SELECTION_KEY) || '[]');
+      if (Array.isArray(parsed)) legacySelection = parsed.map(String);
+    } catch (_) {}
+
+    try {
+      const legacyRecord = await getOutboxRecord('set-my-requests');
+      if (legacyRecord) {
+        const revision = Date.now();
+        const ids = Array.isArray(legacyRecord.testIds) ? legacyRecord.testIds.map(String) : legacySelection;
+        const migrated = {
+          id: outboxId(normalizedUserId),
+          action: 'setMyRequests',
+          operationId: legacyRecord.operationId || createOperationId(),
+          userId: normalizedUserId,
+          revision,
+          testIds: Array.from(new Set(ids)),
+          queuedAt: legacyRecord.queuedAt || new Date().toISOString()
+        };
+        await putOutboxRecord(migrated);
+        saveLocalSelection(normalizedUserId, migrated.testIds, revision);
+      } else if (legacySelectionPresent) {
+        saveLocalSelection(normalizedUserId, legacySelection, Date.now());
+      }
+      await deleteOutboxRecordIfMatches('set-my-requests');
+    } catch (_) {}
+
+    clearLegacyLocalSelection();
+    return getQueuedRequests(normalizedUserId);
+  }
+
+  async function discardLegacyRequests() {
+    clearLegacyLocalSelection();
+    try {
+      await deleteOutboxRecordIfMatches('set-my-requests');
     } catch (_) {}
   }
 
-  async function flushMyRequests(token) {
-    if (!token || !navigator.onLine) return { flushed: false };
-    const record = await getQueuedRequests();
+  async function flushMyRequests(token, userId) {
+    const normalizedUserId = normalizeUserId(userId);
+    if (!token || !normalizedUserId || !navigator.onLine) return { flushed: false };
+    const record = await getQueuedRequests(normalizedUserId);
     if (!record) return { flushed: true, empty: true };
+
     try {
       const data = await api('setMyRequests', {
         operationId: record.operationId,
         testIds: record.testIds
       }, { token });
-      await removeQueuedRequests();
-      clearLocalSelection();
-      return { flushed: true, data };
+      const removed = await removeQueuedRequests(normalizedUserId, record.operationId);
+      if (removed) clearLocalSelection(normalizedUserId, record.revision);
+      return { flushed: true, data, record, removed };
     } catch (error) {
       if (['REQUESTS_CLOSED', 'TEST_CLOSED'].includes(error.code)) {
-        await removeQueuedRequests();
-        clearLocalSelection();
+        const removed = await removeQueuedRequests(normalizedUserId, record.operationId);
+        if (removed) clearLocalSelection(normalizedUserId, record.revision);
       }
       throw error;
     }
@@ -283,9 +407,12 @@
     saveLocalSelection,
     getLocalSelection,
     clearLocalSelection,
+    clearLegacyLocalSelection,
     queueMyRequests,
     getQueuedRequests,
     removeQueuedRequests,
+    migrateLegacyRequests,
+    discardLegacyRequests,
     flushMyRequests,
     createOperationId,
     initials,

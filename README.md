@@ -32,7 +32,17 @@ Corrección de caché para evitar mezclar versiones del panel y asegurar que el 
 - Se mantienen únicamente caracteres numéricos.
 
 
-## v6.2
+## v6.3
 - Recarga completa al cambiar de pestaña.
 - Guarda las solicitudes pendientes antes de mostrar otra sección.
 - Recarga completa al volver a la aplicación.
+
+
+## Cambios v6.3
+
+- La selección optimista ya no puede ser sobrescrita por una lectura antigua que termine más tarde.
+- La cola local se separa por usuario y conserva incluso una selección vacía.
+- Los reintentos no eliminan cambios más recientes.
+- Al cambiar de pestaña se guardan primero los cambios y después se recargan todos los datos.
+- Los PIN son numéricos, con una o más cifras y sin longitud máxima fijada por la aplicación.
+- Las acciones de cambio y restablecimiento de PIN usan nombres compatibles con versiones anteriores del backend.
