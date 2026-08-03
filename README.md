@@ -19,3 +19,9 @@ La dirección de la API ya está configurada en `config.js`.
 
 ## v5.1
 Corrección de caché para evitar mezclar versiones del panel y asegurar que el selector de incompatibilidades cargue correctamente.
+
+
+## Versión 6.0
+- Control de usuarios con sus pruebas asignadas.
+- Edición del reparto completo por persona.
+- PIN obligatorio de exactamente 4 cifras.

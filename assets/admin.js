@@ -58,7 +58,9 @@
       'testId', 'testName', 'testPlaces', 'testOrder', 'testDay', 'testDescription', 'testIncompatibilities', 'testActive',
       'testRequestsOpen', 'testResolutionPublished', 'testFormError', 'assignmentDialog', 'assignmentForm',
       'assignmentDialogTitle', 'assignmentTestId', 'assignmentPlaces', 'assignmentSelectedCount', 'assignmentPeople',
-      'assignmentFormError', 'adminInitialPinDialog', 'adminInitialPinForm', 'adminInitialPin',
+      'assignmentFormError', 'userAssignmentsDialog', 'userAssignmentsForm', 'userAssignmentsTitle', 'userAssignmentsUserId',
+      'userAssignmentsIdentity', 'userAssignmentsCount', 'userAssignmentsTests', 'userAssignmentsError',
+      'adminInitialPinDialog', 'adminInitialPinForm', 'adminInitialPin',
       'adminInitialPinRepeat', 'adminInitialPinError', 'adminInitialPinButton', 'adminToast'
     ].forEach(id => { els[id] = document.getElementById(id); });
   }
@@ -81,9 +83,14 @@
     els.newTestButton.addEventListener('click', openNewTest);
     els.testForm.addEventListener('submit', saveTest);
     els.assignmentForm.addEventListener('submit', saveAssignment);
+    els.userAssignmentsForm.addEventListener('submit', saveUserAssignments);
     els.settingsForm.addEventListener('submit', saveSettings);
     els.adminInitialPinForm.addEventListener('submit', changeInitialPin);
     els.adminInitialPinDialog.addEventListener('cancel', event => event.preventDefault());
+
+    [els.adminPassword, els.userPassword, els.resetPasswordValue, els.adminInitialPin, els.adminInitialPinRepeat]
+      .filter(Boolean)
+      .forEach(bindPinInput);
 
     window.addEventListener('online', () => { if (state.session) checkVersionNow(); });
     document.addEventListener('visibilitychange', () => {
@@ -97,6 +104,10 @@
   async function handleLogin(event) {
     event.preventDefault();
     hideError(els.adminLoginError);
+    if (!isValidPin(els.adminPassword.value)) {
+      showError(els.adminLoginError, 'El PIN debe tener exactamente 4 cifras.');
+      return;
+    }
     VP.setButtonBusy(els.adminLoginButton, true, 'Accediendo…');
 
     try {
@@ -233,21 +244,44 @@
   }
 
   function renderUsers() {
-    els.usersTableBody.innerHTML = state.data.users.map(user => `
-      <tr>
-        <td><div class="table-person"><span>${VP.escapeHtml(VP.initials(user.name))}</span><strong>${VP.escapeHtml(user.name)}</strong></div></td>
+    const testsById = indexBy(state.data.tests, 'id');
+    const assignmentsByUser = groupBy(state.data.assignments, 'userId');
+
+    els.usersTableBody.innerHTML = state.data.users.map(user => {
+      const assignedTests = (assignmentsByUser[user.id] || [])
+        .map(item => testsById[item.testId])
+        .filter(Boolean)
+        .sort((a, b) => dayIndex(a.day) - dayIndex(b.day) || a.order - b.order || sortByName(a, b));
+      const isParticipant = user.role !== 'admin';
+      const count = assignedTests.length;
+      const distribution = distributionStatus(count, isParticipant);
+      const testTags = assignedTests.length
+        ? assignedTests.map(test => `<span class="user-test-tag"><small>${VP.escapeHtml(dayShort(test.day))}</small>${VP.escapeHtml(test.name)}</span>`).join('')
+        : `<span class="no-user-tests">${isParticipant ? 'Sin pruebas asignadas' : 'No aplica'}</span>`;
+
+      return `
+      <tr class="${user.active ? '' : 'row-inactive'}">
+        <td>
+          <div class="table-person"><span>${VP.escapeHtml(VP.initials(user.name))}</span><div><strong>${VP.escapeHtml(user.name)}</strong><small>${user.role === 'admin' ? 'Administrador' : 'Participante'}</small></div></div>
+        </td>
         <td><code>${VP.escapeHtml(user.username)}</code></td>
-        <td><span class="role-badge ${user.role === 'admin' ? 'admin' : ''}">${user.role === 'admin' ? 'Administrador' : 'Participante'}</span></td>
+        <td><div class="user-tests-cell">${testTags}</div></td>
+        <td><span class="distribution-badge ${distribution.key}">${isParticipant ? `${count} ${count === 1 ? 'prueba' : 'pruebas'}` : '—'}</span><small class="distribution-caption">${VP.escapeHtml(distribution.label)}</small></td>
         <td>
           <span class="state-dot ${user.active ? 'active' : 'inactive'}">${user.active ? 'Activo' : 'Inactivo'}</span>
-          ${user.mustChangePin ? '<small class="pin-pending">PIN temporal</small>' : ''}
+          ${user.mustChangePin ? '<small class="pin-pending">Debe cambiar el PIN</small>' : '<small class="pin-ready">PIN configurado</small>'}
         </td>
-        <td class="actions-cell">
+        <td class="actions-cell user-actions-cell">
+          ${isParticipant ? `<button class="table-action primary-table-action" type="button" data-user-assignments="${VP.escapeHtml(user.id)}">Pruebas</button>` : ''}
           <button class="table-action" type="button" data-edit-user="${VP.escapeHtml(user.id)}">Editar</button>
           <button class="table-action" type="button" data-reset-user="${VP.escapeHtml(user.id)}">PIN</button>
         </td>
-      </tr>`).join('');
+      </tr>`;
+    }).join('');
 
+    els.usersTableBody.querySelectorAll('[data-user-assignments]').forEach(button => {
+      button.addEventListener('click', () => openUserAssignments(button.dataset.userAssignments));
+    });
     els.usersTableBody.querySelectorAll('[data-edit-user]').forEach(button => {
       button.addEventListener('click', () => openEditUser(button.dataset.editUser));
     });
@@ -359,6 +393,161 @@
       VP.showToast(els.adminToast, 'PIN restablecido. Se pedirá cambiarlo al entrar.');
     } catch (error) {
       showError(els.resetPasswordError, readableError(error));
+    } finally {
+      VP.setButtonBusy(button, false);
+    }
+  }
+
+  function openUserAssignments(userId) {
+    const user = state.data.users.find(item => item.id === userId);
+    if (!user || user.role === 'admin') return;
+
+    hideError(els.userAssignmentsError);
+    els.userAssignmentsUserId.value = user.id;
+    els.userAssignmentsTitle.textContent = `Pruebas de ${user.name}`;
+    els.userAssignmentsIdentity.textContent = `@${user.username}`;
+
+    const assignedIds = new Set(
+      state.data.assignments.filter(item => item.userId === user.id).map(item => item.testId)
+    );
+    const requestedIds = new Set(
+      state.data.requests.filter(item => item.userId === user.id).map(item => item.testId)
+    );
+    const activeTests = state.data.tests
+      .filter(test => test.active)
+      .sort((a, b) => dayIndex(a.day) - dayIndex(b.day) || a.order - b.order || sortByName(a, b));
+    const byDay = groupBy(activeTests.map(test => Object.assign({}, test, { dayGroup: dayLabel(test.day) })), 'dayGroup');
+
+    els.userAssignmentsTests.innerHTML = DAY_ORDER.map(day => {
+      const tests = byDay[day] || [];
+      if (!tests.length) return '';
+      return `
+        <section class="user-test-day-group">
+          <h3>${VP.escapeHtml(day)}</h3>
+          <div class="user-test-grid">
+            ${tests.map(test => {
+              const assignedCount = state.data.assignments.filter(item => item.testId === test.id && item.userId !== user.id).length;
+              const isAssigned = assignedIds.has(test.id);
+              const isFull = test.places > 0 && assignedCount >= test.places && !isAssigned;
+              const requestLabel = requestedIds.has(test.id) ? 'La solicitó' : 'No solicitada';
+              return `
+                <label class="user-test-option ${requestedIds.has(test.id) ? 'requested' : 'direct'} ${isFull ? 'full' : ''}">
+                  <input type="checkbox" value="${VP.escapeHtml(test.id)}" ${isAssigned ? 'checked' : ''} ${isFull ? 'disabled' : ''}>
+                  <span class="user-test-option-check">✓</span>
+                  <span class="user-test-option-copy">
+                    <strong>${VP.escapeHtml(test.name)}</strong>
+                    <small>${VP.escapeHtml(requestLabel)} · ${assignedCount + (isAssigned ? 1 : 0)}/${test.places || '∞'} asignadas</small>
+                  </span>
+                  ${isFull ? '<em>Sin plazas</em>' : ''}
+                </label>`;
+            }).join('')}
+          </div>
+        </section>`;
+    }).join('') || '<p class="empty-admin">No hay pruebas activas.</p>';
+
+    els.userAssignmentsTests.querySelectorAll('input').forEach(input => {
+      input.addEventListener('change', () => handleUserAssignmentsSelection(user, input));
+    });
+    updateUserAssignmentsState(user);
+    els.userAssignmentsDialog.showModal();
+  }
+
+  function selectedUserAssignmentTestIds() {
+    return Array.from(els.userAssignmentsTests.querySelectorAll('input:checked')).map(input => input.value);
+  }
+
+  function userTestConflicts(testIds) {
+    const selected = new Set((testIds || []).map(String));
+    const testsById = indexBy(state.data.tests, 'id');
+    const conflicts = [];
+    const seen = new Set();
+
+    selected.forEach(testId => {
+      const test = testsById[testId];
+      if (!test) return;
+      (test.incompatibleTestIds || []).forEach(otherId => {
+        otherId = String(otherId);
+        if (!selected.has(otherId)) return;
+        const key = [testId, otherId].sort().join('::');
+        if (seen.has(key)) return;
+        seen.add(key);
+        conflicts.push([test, testsById[otherId]].filter(Boolean));
+      });
+    });
+    return conflicts;
+  }
+
+  function userCapacityProblems(userId, testIds) {
+    const selected = new Set((testIds || []).map(String));
+    return state.data.tests.filter(test => selected.has(test.id) && test.places > 0).map(test => {
+      const otherAssigned = state.data.assignments.filter(item => item.testId === test.id && item.userId !== userId).length;
+      return { test, count: otherAssigned + 1 };
+    }).filter(item => item.count > item.test.places);
+  }
+
+  function handleUserAssignmentsSelection(user, changedInput) {
+    let ids = selectedUserAssignmentTestIds();
+    const conflicts = userTestConflicts(ids);
+    const capacity = userCapacityProblems(user.id, ids);
+
+    if (changedInput && changedInput.checked && (conflicts.length || capacity.length)) {
+      changedInput.checked = false;
+      ids = selectedUserAssignmentTestIds();
+      const conflictMessage = conflicts.length
+        ? `No puedes combinar ${conflicts.map(pair => pair.map(test => test.name).join(' con ')).join('; ')}.`
+        : `No queda plaza en ${capacity.map(item => item.test.name).join(', ')}.`;
+      showError(els.userAssignmentsError, conflictMessage);
+    } else if (!userTestConflicts(ids).length && !userCapacityProblems(user.id, ids).length) {
+      hideError(els.userAssignmentsError);
+    }
+    updateUserAssignmentsState(user);
+  }
+
+  function updateUserAssignmentsState(user) {
+    const ids = selectedUserAssignmentTestIds();
+    const count = ids.length;
+    const status = distributionStatus(count, true);
+    els.userAssignmentsCount.textContent = `${count} ${count === 1 ? 'prueba' : 'pruebas'} · ${status.label}`;
+    els.userAssignmentsCount.className = `distribution-text ${status.key}`;
+
+    const conflicts = userTestConflicts(ids);
+    const capacity = userCapacityProblems(user.id, ids);
+    const button = els.userAssignmentsForm.querySelector('[type="submit"]');
+    button.disabled = Boolean(conflicts.length || capacity.length);
+  }
+
+  async function saveUserAssignments(event) {
+    event.preventDefault();
+    hideError(els.userAssignmentsError);
+    const button = els.userAssignmentsForm.querySelector('[type="submit"]');
+    const userId = els.userAssignmentsUserId.value;
+    const user = state.data.users.find(item => item.id === userId);
+    const testIds = selectedUserAssignmentTestIds();
+
+    if (!user) return;
+    const conflicts = userTestConflicts(testIds);
+    if (conflicts.length) {
+      showError(els.userAssignmentsError, `Hay pruebas incompatibles: ${conflicts.map(pair => pair.map(test => test.name).join(' y ')).join('; ')}.`);
+      return;
+    }
+    const capacity = userCapacityProblems(userId, testIds);
+    if (capacity.length) {
+      showError(els.userAssignmentsError, `No queda plaza en ${capacity.map(item => item.test.name).join(', ')}.`);
+      return;
+    }
+    if (testIds.length < 2 || testIds.length > 4) {
+      const proceed = window.confirm(`${user.name} quedará con ${testIds.length} pruebas. El objetivo es que cada persona tenga entre 2 y 4.\n\n¿Guardar de todos modos?`);
+      if (!proceed) return;
+    }
+
+    VP.setButtonBusy(button, true, 'Guardando…');
+    try {
+      await VP.api('adminSetUserAssignments', { userId, testIds }, { token: state.session.token });
+      els.userAssignmentsDialog.close();
+      await loadAdminData({ quiet: true });
+      VP.showToast(els.adminToast, `Reparto de ${user.name} actualizado.`);
+    } catch (error) {
+      showError(els.userAssignmentsError, readableError(error));
     } finally {
       VP.setButtonBusy(button, false);
     }
@@ -913,6 +1102,30 @@
     const detail = issues.slice(0, 12).map(issue => `${issue.user.name}: ${issue.count}`).join('\n');
     const rest = issues.length > 12 ? `\n…y ${issues.length - 12} personas más.` : '';
     return `${prefix}\n\n${detail}${rest}\n\n¿Continuar?`;
+  }
+
+  function distributionStatus(count, applies = true) {
+    if (!applies) return { key: 'neutral', label: 'No aplica' };
+    if (count < 2) return { key: 'low', label: count === 1 ? 'Falta 1' : `Faltan ${2 - count}` };
+    if (count > 4) return { key: 'high', label: `Sobran ${count - 4}` };
+    return { key: 'ok', label: 'Correcto' };
+  }
+
+  function dayIndex(day) {
+    const index = DAY_ORDER.indexOf(dayLabel(day));
+    return index < 0 ? DAY_ORDER.length : index;
+  }
+
+  function dayShort(day) {
+    const label = dayLabel(day);
+    return label === 'Sin día asignado' ? 'Sin día' : label;
+  }
+
+  function bindPinInput(input) {
+    input.addEventListener('input', () => {
+      const clean = String(input.value || '').replace(/\D/g, '').slice(0, 4);
+      if (input.value !== clean) input.value = clean;
+    });
   }
 
   function capacityStatus(count, places) {

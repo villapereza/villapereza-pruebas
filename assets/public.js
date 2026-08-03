@@ -85,6 +85,10 @@
     els.initialPinForm.addEventListener('submit', changeInitialPin);
     els.initialPinDialog.addEventListener('cancel', event => event.preventDefault());
 
+    [els.loginPassword, els.currentPassword, els.newPassword, els.repeatPassword, els.initialPin, els.initialPinRepeat]
+      .filter(Boolean)
+      .forEach(bindPinInput);
+
     window.addEventListener('online', handleOnline);
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden && state.session) checkVersionNow();
@@ -98,6 +102,10 @@
   async function handleLogin(event) {
     event.preventDefault();
     hideError(els.loginError);
+    if (!isValidPin(els.loginPassword.value)) {
+      showError(els.loginError, 'El PIN debe tener exactamente 4 cifras.');
+      return;
+    }
     VP.setButtonBusy(els.loginButton, true, 'Entrando…');
 
     try {
@@ -623,6 +631,13 @@
     els.appView.hidden = false;
   }
 
+  function bindPinInput(input) {
+    input.addEventListener('input', () => {
+      const clean = String(input.value || '').replace(/\D/g, '').slice(0, 4);
+      if (input.value !== clean) input.value = clean;
+    });
+  }
+
   function showError(element, message) {
     element.textContent = message;
     element.hidden = false;
@@ -647,7 +662,7 @@
 
   function registerServiceWorker() {
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js').catch(() => {});
+      navigator.serviceWorker.register('sw.js').then(registration => registration.update()).catch(() => {});
     }
   }
 })();

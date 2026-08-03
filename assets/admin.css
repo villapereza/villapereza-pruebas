@@ -429,3 +429,50 @@ code { padding: 3px 6px; border-radius: 5px; color: #45516a; background: #eef2f7
 @media (max-width: 700px) {
   .incompatibility-selector { grid-template-columns: 1fr; }
 }
+
+
+/* v6 · Control de usuarios y reparto por persona */
+.toolbar-copy { margin: 5px 0 0; color: var(--muted); font-size: 12px; }
+.users-control-table { min-width: 1050px; }
+.users-control-table td { vertical-align: top; }
+.table-person > div { display: grid; gap: 2px; }
+.table-person > div small { color: var(--muted); font-size: 10px; font-weight: 650; }
+.user-tests-cell { display: flex; flex-wrap: wrap; gap: 6px; min-width: 270px; max-width: 520px; }
+.user-test-tag { display: inline-flex; align-items: center; gap: 6px; padding: 6px 9px; border: 1px solid #dce5ee; border-radius: 9px; background: #f8fafc; color: var(--navy); font-size: 11px; font-weight: 720; }
+.user-test-tag small { padding: 2px 5px; border-radius: 5px; background: #e8eef5; color: var(--muted); font-size: 8px; text-transform: uppercase; }
+.no-user-tests { color: var(--muted); font-size: 11px; font-style: italic; }
+.distribution-badge { display: inline-flex; padding: 6px 9px; border-radius: 8px; font-size: 11px; font-weight: 800; white-space: nowrap; }
+.distribution-badge.low, .distribution-text.low { color: #a91f2e; background: #ffeaed; }
+.distribution-badge.high, .distribution-text.high { color: #9a6200; background: #fff0c7; }
+.distribution-badge.ok, .distribution-text.ok { color: #08734d; background: #dcf8ec; }
+.distribution-badge.neutral, .distribution-text.neutral { color: var(--muted); background: #eef2f6; }
+.distribution-caption { display: block; margin-top: 5px; color: var(--muted); font-size: 9px; }
+.pin-ready { display: block; margin-top: 4px; color: #08734d; font-size: 9px; font-weight: 700; }
+.user-actions-cell { min-width: 190px; }
+.primary-table-action { color: #fff !important; border-color: var(--navy) !important; background: var(--navy) !important; }
+.user-assignments-dialog { width: min(920px, calc(100vw - 28px)); }
+.user-assignment-meta { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin: 4px 0 8px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: #f7f9fc; }
+.user-assignment-meta span { color: var(--muted); font-size: 12px; font-weight: 700; }
+.user-assignment-meta strong { padding: 7px 10px; border-radius: 8px; font-size: 11px; }
+.dialog-help { margin: 0 0 16px; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.user-test-selector { display: grid; gap: 18px; max-height: 58vh; overflow: auto; padding-right: 3px; }
+.user-test-day-group h3 { margin: 0 0 9px; color: var(--navy); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
+.user-test-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+.user-test-option { position: relative; display: grid; grid-template-columns: 28px 1fr auto; align-items: center; gap: 10px; min-height: 63px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: #fff; cursor: pointer; }
+.user-test-option:hover { border-color: #aebdcb; }
+.user-test-option input { position: absolute; opacity: 0; pointer-events: none; }
+.user-test-option-check { display: grid; place-items: center; width: 26px; height: 26px; border: 2px solid #cbd5df; border-radius: 8px; color: transparent; font-size: 13px; font-weight: 900; }
+.user-test-option input:checked + .user-test-option-check { border-color: var(--navy); color: #fff; background: var(--navy); }
+.user-test-option-copy { display: grid; gap: 4px; }
+.user-test-option-copy strong { color: var(--navy); font-size: 12px; }
+.user-test-option-copy small { color: var(--muted); font-size: 10px; }
+.user-test-option.requested { border-left: 4px solid #2c91c6; }
+.user-test-option.direct { border-left: 4px solid #d7dde4; }
+.user-test-option.full { opacity: .58; cursor: not-allowed; }
+.user-test-option em { color: #a91f2e; font-size: 9px; font-style: normal; font-weight: 800; text-transform: uppercase; }
+
+@media (max-width: 720px) {
+  .user-test-grid { grid-template-columns: 1fr; }
+  .user-assignments-dialog { width: calc(100vw - 18px); }
+  .user-test-selector { max-height: 54vh; }
+}
