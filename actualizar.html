@@ -2,31 +2,26 @@
 <html lang="es">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Actualizar Villa Pereza</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
+  <title>Actualizando Villa Pereza…</title>
+  <style>body{font-family:system-ui,sans-serif;display:grid;place-items:center;min-height:100vh;margin:0;background:#172033;color:white;text-align:center;padding:24px}main{max-width:480px}h1{margin-bottom:8px}p{opacity:.85}</style>
 </head>
-<body style="font-family:system-ui,sans-serif;padding:32px;text-align:center">
-  <h1>Actualizando Villa Pereza…</h1>
-  <p>Se están eliminando versiones antiguas.</p>
-  <script>
-    (async () => {
-      try {
-        if ('serviceWorker' in navigator) {
-          const registrations = await navigator.serviceWorker.getRegistrations();
-          await Promise.all(registrations.map(registration => registration.unregister()));
-        }
-        if ('caches' in window) {
-          const names = await caches.keys();
-          await Promise.all(names.map(name => caches.delete(name)));
-        }
-        Object.keys(localStorage)
-          .filter(key => key.startsWith('vp_public_cache_'))
-          .forEach(key => localStorage.removeItem(key));
-      } catch (error) {
-        console.warn('No se pudo limpiar toda la caché:', error);
-      }
-      location.replace('admin.html?v=8.0.1&fresh=' + Date.now());
-    })();
-  </script>
-</body>
-</html>
+<body><main><h1>Actualizando Villa Pereza</h1><p>Eliminando versiones anteriores…</p></main>
+<script>
+(async()=>{
+  try {
+    if ('serviceWorker' in navigator) {
+      const regs=await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r=>r.unregister()));
+    }
+    if ('caches' in window) {
+      const names=await caches.keys();
+      await Promise.all(names.map(n=>caches.delete(n)));
+    }
+    localStorage.removeItem('vp_api_info');
+    sessionStorage.clear();
+  } catch(e) {}
+  location.replace('admin.html?v=803&fresh='+Date.now());
+})();
+</script></body></html>

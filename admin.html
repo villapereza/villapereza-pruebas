@@ -7,10 +7,10 @@
   <meta name="description" content="Panel de administración de Villa Pereza.">
   <title>Administración · Villa Pereza</title>
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="assets/admin.css?v=7.1.0">
-  <script defer src="config.js?v=7.1.0"></script>
-  <script defer src="assets/shared.js?v=7.1.0"></script>
-  <script defer src="assets/admin.js?v=7.1.0"></script>
+  <link rel="stylesheet" href="assets/admin-8.0.3.css">
+  <script defer src="config-8.0.3.js"></script>
+  <script defer src="assets/shared-8.0.3.js"></script>
+  <script defer src="assets/admin-8.0.3.js"></script>
   <script>
     // La aplicación prioriza siempre la versión más reciente.
     // Elimina cualquier Service Worker o caché de versiones anteriores.
@@ -50,7 +50,7 @@
         <button id="adminLoginButton" class="admin-primary" type="submit">Acceder</button>
       </form>
       <a href="index.html">Volver a la aplicación del equipo</a>
-      <p id="adminVersionStatus" class="version-status">Web 7.1 · comprobando API…</p>
+      <p id="adminVersionStatus" class="version-status">Web 8.0.2 · comprobando API…</p>
     </main>
   </section>
 
@@ -103,7 +103,7 @@
 
       <section class="admin-panel" data-admin-panel="users" hidden>
         <div class="panel-toolbar"><div><span class="section-label">EQUIPO Y REPARTO</span><h2>Usuarios</h2><p class="toolbar-copy">Consulta y modifica desde aquí las pruebas asignadas a cada integrante.</p></div><button id="newUserButton" class="admin-primary" type="button">Crear usuario</button></div>
-        <div class="admin-card table-card"><div class="table-scroll"><table class="users-control-table"><thead><tr><th>Persona</th><th>Usuario</th><th>Pruebas asignadas</th><th>Total</th><th>Cuenta</th><th></th></tr></thead><tbody id="usersTableBody"></tbody></table></div></div>
+        <div class="admin-card table-card"><div class="table-scroll"><table class="users-control-table"><thead><tr><th>Persona</th><th>Usuario</th><th>Solicitudes realizadas</th><th>Pruebas asignadas</th><th>Total</th><th>Cuenta</th><th></th></tr></thead><tbody id="usersTableBody"></tbody></table></div></div>
       </section>
 
       <section class="admin-panel" data-admin-panel="tests" hidden>
@@ -189,7 +189,7 @@
         <label><span>Nombre</span><input id="testName" type="text" required></label>
         <label><span>Plazas</span><input id="testPlaces" type="number" min="0" max="100" required></label>
         <label><span>Orden</span><input id="testOrder" type="number" min="1" required></label>
-        <label><span>Día</span><select id="testDay"><option value="">Sin asignar</option><option value="viernes">Viernes</option><option value="Sábado">Sábado</option><option value="Domingo">Domingo</option></select></label>
+        <label><span>Día</span><select id="testDay"><option value="">Sin asignar</option><option value="Viernes 21">Viernes 21</option><option value="Sábado 22">Sábado 22</option><option value="Domingo 23">Domingo 23</option></select></label>
       </div>
       <label><span>Descripción</span><textarea id="testDescription" rows="3" maxlength="500"></textarea></label>
       <section class="incompatibility-field">
